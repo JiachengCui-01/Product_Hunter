@@ -26,10 +26,13 @@ python -m venv .venv
 .venv\Scripts\pip install -r requirements.txt
 copy .env.example .env
 ```
-Edit `backend\.env` and fill in `ANTHROPIC_API_KEY` (required for the two AI
-endpoints: review analysis and opportunity generation — everything else works
-without it). Leave `RAINFOREST_API_KEY` blank until you have one; `DATA_PROVIDER`
-stays `mock` until then.
+Edit `backend\.env` and fill in `DEEPSEEK_API_KEY` (get one at
+[platform.deepseek.com/api_keys](https://platform.deepseek.com/api_keys) —
+required for the two AI endpoints: review analysis and opportunity generation;
+everything else works without it). To use Anthropic Claude instead, set
+`LLM_PROVIDER=anthropic` and fill in `ANTHROPIC_API_KEY`. Leave
+`RAINFOREST_API_KEY` blank until you have one; `DATA_PROVIDER` stays `mock`
+until then.
 
 Seed the database with realistic mock data (7 categories, ~56 products, ~300+ reviews):
 ```powershell
@@ -90,7 +93,7 @@ root that provisions both the web service and a free managed Postgres database.
    `furniture-insight-backend` web service and the `furniture-insight-db`
    Postgres database.
 3. When prompted for the `sync: false` env vars, paste in your own
-   `ANTHROPIC_API_KEY` (and `RAINFOREST_API_KEY` later, once you have one) —
+   `DEEPSEEK_API_KEY` (and `RAINFOREST_API_KEY` later, once you have one) —
    type these directly into Render's dashboard field, not anywhere else.
 4. Click **Apply**. Render builds the Docker image, provisions Postgres, wires
    `DATABASE_URL` automatically, and deploys. First boot will auto-create
@@ -104,8 +107,9 @@ root that provisions both the web service and a free managed Postgres database.
 New → Web Service → connect repo → Root Directory: `backend` → Runtime:
 `Docker` → add a Postgres instance separately (New → PostgreSQL) → copy its
 "Internal Connection String" into the web service's `DATABASE_URL` env var →
-add `ANTHROPIC_API_KEY`, `DATA_PROVIDER=mock`, `CHROMA_PERSIST_DIR=/app/data/chroma`,
-`CORS_ORIGINS=http://localhost:3000` as additional env vars.
+add `LLM_PROVIDER=deepseek`, `DEEPSEEK_API_KEY`, `DATA_PROVIDER=mock`,
+`CHROMA_PERSIST_DIR=/app/data/chroma`, `CORS_ORIGINS=http://localhost:3000`
+as additional env vars.
 
 ### 5b. Frontend → Vercel
 

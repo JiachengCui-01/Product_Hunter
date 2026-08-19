@@ -114,7 +114,11 @@ class Settings(BaseSettings):
     RAINFOREST_API_KEY: str = ""
 
     # --- LLM provider -------------------------------------------------
-    LLM_PROVIDER: str = "anthropic"  # currently only "anthropic" is implemented
+    # "deepseek" (default) - low-cost Chinese model, OpenAI-compatible API.
+    # "anthropic" - Claude, also implemented, switch to it by changing
+    # this one value plus ANTHROPIC_API_KEY - no code changes needed.
+    LLM_PROVIDER: str = "deepseek"
+    DEEPSEEK_API_KEY: str = ""
     ANTHROPIC_API_KEY: str = ""
 
     # --- Vector store (Chroma) for RAG-style report similarity -------

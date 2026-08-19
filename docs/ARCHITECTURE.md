@@ -18,7 +18,7 @@
                                                 │                        │
                                                 │  ai/agent.py            │
                                                 │    ├─ prompts.py        │
-                                                │    ├─ llm_client.py ───►│──► Anthropic Claude API
+                                                │    ├─ llm_client.py ───►│──► DeepSeek API (default) / Anthropic Claude
                                                 │    └─ rag.py ──────────►│──► ChromaDB (embedded, local dir)
                                                 │                        │
                                                 │  services/*_provider.py│

@@ -22,7 +22,7 @@ into a multi-agent, real-data, enterprise system.
 - **Backend**: Python FastAPI, REST API → deployed via Docker (also runs standalone)
 - **Database**: SQLAlchemy ORM, SQLite by default (zero-install), PostgreSQL-ready
 - **Vector DB**: ChromaDB (embedded, local persistent directory — no server needed)
-- **AI**: Anthropic Claude API, single `FurnitureInsightAgent` today, structured to
+- **AI**: DeepSeek API (default, cost-effective; Anthropic Claude also supported), single `FurnitureInsightAgent` today, structured to
   grow into a Router Agent over specialist agents (see `docs/AGENT_DESIGN.md`)
 
 ## Project structure
@@ -56,7 +56,7 @@ Short version:
 cd backend
 python -m venv .venv
 .venv\Scripts\pip install -r requirements.txt
-copy .env.example .env              # fill in ANTHROPIC_API_KEY for the AI endpoints
+copy .env.example .env              # fill in DEEPSEEK_API_KEY for the AI endpoints
 .venv\Scripts\python -m app.seed.seed_data
 .venv\Scripts\uvicorn app.main:app --reload --port 8000
 
@@ -71,7 +71,7 @@ Visit `http://localhost:3000`. Backend API docs at `http://localhost:8000/docs`.
 **Verified working end-to-end**: backend seeded with 7 categories / 56 products /
 315 reviews, all non-AI pages render live data; the two AI endpoints (review
 analysis, opportunity generation) return a clean, non-crashing error until an
-`ANTHROPIC_API_KEY` is added.
+`DEEPSEEK_API_KEY` is added.
 
 ## Data sources today vs. tomorrow
 

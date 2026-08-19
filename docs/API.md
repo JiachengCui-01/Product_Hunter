@@ -108,7 +108,7 @@ Response:
 
 ---
 
-## Review Analysis (AI — requires `ANTHROPIC_API_KEY`)
+## Review Analysis (AI — requires `DEEPSEEK_API_KEY`, or `ANTHROPIC_API_KEY` if `LLM_PROVIDER=anthropic`)
 
 ### `POST /api/analysis/reviews`
 Aspect-Based Sentiment Analysis over a batch of reviews.
@@ -124,11 +124,11 @@ Response:
   "pain_points": ["drawer too shallow"]
 }
 ```
-Returns `503`/clear error JSON (not a stack trace) if `ANTHROPIC_API_KEY` is unset.
+Returns `503`/clear error JSON (not a stack trace) if the configured provider's API key is unset.
 
 ---
 
-## Opportunity Reports (AI — requires `ANTHROPIC_API_KEY`)
+## Opportunity Reports (AI — requires `DEEPSEEK_API_KEY`, or `ANTHROPIC_API_KEY` if `LLM_PROVIDER=anthropic`)
 
 ### `POST /api/opportunities/generate`
 Combines market trend + review analysis (+ similar past reports via RAG) into a new
