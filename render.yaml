@@ -1,0 +1,47 @@
+# Render Blueprint - https://render.com/docs/blueprint-spec
+#
+# Lets you deploy the backend + a managed Postgres database in one step:
+# Render dashboard -> New -> Blueprint -> connect this GitHub repo -> Apply.
+#
+# ANTHROPIC_API_KEY and RAINFOREST_API_KEY are marked `sync: false`, which
+# means Render will prompt you to type them into its dashboard yourself
+# during setup (they are never stored in this repo).
+#
+# If Blueprint auto-detection doesn't pick this up for any reason, the
+# equivalent manual setup is documented in docs/SETUP.md under
+# "Deploying the backend (Render)".
+
+services:
+  - type: web
+    name: furniture-insight-backend
+    runtime: docker
+    plan: free
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: furniture-insight-db
+          property: connectionString
+      - key: DATA_PROVIDER
+        value: mock
+      - key: LLM_PROVIDER
+        value: anthropic
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: RAINFOREST_API_KEY
+        sync: false
+      - key: CHROMA_PERSIST_DIR
+        value: /app/data/chroma
+      - key: CORS_ORIGINS
+        value: http://localhost:3000
+        # Update this after your Vercel frontend is deployed, e.g.
+        # "http://localhost:3000,https://your-app.vercel.app"
+
+databases:
+  - name: furniture-insight-db
+    plan: free
+    databaseName: product_hunter
+    user: product_hunter

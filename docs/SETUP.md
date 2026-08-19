@@ -73,6 +73,67 @@ Once you have a Rainforest API (or similar) key:
 
 ## 5. Deployment
 
-- **Frontend** → Vercel: import the `frontend/` directory as the project root, set
-  `NEXT_PUBLIC_API_URL` to your deployed backend URL.
-- **Backend** → any Docker host, using `backend/Dockerfile` (build context `backend/`).
+Deploy the **backend first** (you need its live URL for the frontend's env var),
+then the **frontend**, then go back and tighten the backend's CORS setting.
+
+### 5a. Backend → Render
+
+Render can build straight from `backend/Dockerfile` on every push to `main` — no
+local Docker install needed. A `render.yaml` Blueprint is included at the repo
+root that provisions both the web service and a free managed Postgres database.
+
+1. Go to [dashboard.render.com](https://dashboard.render.com) and sign in
+   (GitHub OAuth is the easiest — Render needs you to authorize repo access
+   yourself; this can't be done on your behalf).
+2. **New → Blueprint** → connect the `JiachengCui-01/Product_Hunter` repo →
+   Render reads `render.yaml` and shows you two resources: the
+   `furniture-insight-backend` web service and the `furniture-insight-db`
+   Postgres database.
+3. When prompted for the `sync: false` env vars, paste in your own
+   `ANTHROPIC_API_KEY` (and `RAINFOREST_API_KEY` later, once you have one) —
+   type these directly into Render's dashboard field, not anywhere else.
+4. Click **Apply**. Render builds the Docker image, provisions Postgres, wires
+   `DATABASE_URL` automatically, and deploys. First boot will auto-create
+   tables and auto-seed mock data (see `app/main.py` startup hook) — no manual
+   seed step needed.
+5. Once live, copy the service URL Render gives you (e.g.
+   `https://furniture-insight-backend.onrender.com`) — you'll need it for the
+   frontend. Confirm it works: visit `<that-url>/health`.
+
+**If you'd rather not use the Blueprint file**, the manual equivalent is:
+New → Web Service → connect repo → Root Directory: `backend` → Runtime:
+`Docker` → add a Postgres instance separately (New → PostgreSQL) → copy its
+"Internal Connection String" into the web service's `DATABASE_URL` env var →
+add `ANTHROPIC_API_KEY`, `DATA_PROVIDER=mock`, `CHROMA_PERSIST_DIR=/app/data/chroma`,
+`CORS_ORIGINS=http://localhost:3000` as additional env vars.
+
+### 5b. Frontend → Vercel
+
+1. Go to [vercel.com](https://vercel.com), sign in (GitHub OAuth — again, you
+   need to authorize this yourself).
+2. **Add New → Project** → import `JiachengCui-01/Product_Hunter`.
+3. Under **Root Directory**, set it to `frontend` (this repo is a monorepo —
+   Vercel needs to know the Next.js app isn't at the repo root).
+4. Add an environment variable: `NEXT_PUBLIC_API_URL` = the Render backend URL
+   from step 5a (e.g. `https://furniture-insight-backend.onrender.com`).
+5. Deploy. Vercel gives you a URL like `https://product-hunter-xyz.vercel.app`.
+
+### 5c. Close the loop: update backend CORS
+
+Go back to the Render service's environment variables and update
+`CORS_ORIGINS` to include your real Vercel URL, e.g.:
+```
+http://localhost:3000,https://product-hunter-xyz.vercel.app
+```
+Save — Render redeploys automatically, no code changes needed. Without this
+step the deployed frontend's API calls will be blocked by the browser's CORS
+policy even though the backend itself is reachable.
+
+### Notes
+- The Chroma vector store lives on the web service's local (ephemeral) disk in
+  this setup — it resets on every redeploy. That's fine for the MVP (it only
+  affects "similar past reports" enrichment, not the RAG feature's stability
+  more broadly); add a Render persistent disk later if you want it to survive
+  redeploys.
+- Render's free tier spins the service down after inactivity; the first
+  request after idle can take ~30-60s to wake it back up.

@@ -45,18 +45,31 @@ BACKEND_DIR = _THIS_FILE.parents[2]
 DATA_DIR = REPO_ROOT / "data"
 
 
+def _normalize_postgres_url(raw_url: str) -> str:
+    """
+    Some hosts (Heroku-style) hand out DATABASE_URL as "postgres://...",
+    which newer SQLAlchemy/psycopg combinations reject - they require the
+    "postgresql://" scheme. Normalize defensively so either form works,
+    regardless of which managed-Postgres provider issued the URL.
+    """
+    if raw_url.startswith("postgres://"):
+        return "postgresql://" + raw_url[len("postgres://"):]
+    return raw_url
+
+
 def _resolve_sqlite_url(raw_url: str) -> str:
     """
     Turn a relative sqlite URL (e.g. 'sqlite:///../data/product_hunter.db')
     into an absolute-path sqlite URL anchored at the repo root's data/
     folder, regardless of current working directory.
 
-    Non-sqlite URLs (e.g. a real Postgres DSN) are passed through
-    unchanged, which is what allows this app to "swap" to Postgres later
-    without any code changes - only the .env value changes.
+    Non-sqlite URLs (e.g. a real Postgres DSN) are normalized (see
+    `_normalize_postgres_url`) and passed through otherwise unchanged,
+    which is what allows this app to "swap" to Postgres later without any
+    code changes - only the .env / DATABASE_URL value changes.
     """
     if not raw_url.startswith("sqlite"):
-        return raw_url
+        return _normalize_postgres_url(raw_url)
 
     # Ensure the data directory exists before SQLAlchemy tries to open the file.
     DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -66,8 +79,17 @@ def _resolve_sqlite_url(raw_url: str) -> str:
 
 
 def _resolve_chroma_dir(raw_dir: str) -> str:
-    """Resolve the Chroma persistence directory to an absolute path under data/."""
-    chroma_dir = DATA_DIR / "chroma"
+    """
+    Resolve the Chroma persistence directory.
+
+    If CHROMA_PERSIST_DIR is already an absolute path (e.g. "/app/data/chroma",
+    set via an env var inside a container where there is no repo-root
+    "data/" sibling folder), use it directly. Otherwise resolve it as a
+    relative path anchored at the repo root's data/ folder (local dev
+    default) - this preserves the original zero-config local-dev behavior.
+    """
+    candidate = Path(raw_dir)
+    chroma_dir = candidate if candidate.is_absolute() else DATA_DIR / "chroma"
     chroma_dir.mkdir(parents=True, exist_ok=True)
     return str(chroma_dir)
 

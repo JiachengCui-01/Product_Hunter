@@ -23,4 +23,8 @@ COPY app ./app
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Shell form (not exec/JSON-array form) so $PORT is expanded at container
+# start. Managed hosts like Render inject a PORT env var and require the
+# process to bind to it; local `docker run` / docker-compose without PORT
+# set falls back to 8000.
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}

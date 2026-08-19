@@ -20,7 +20,9 @@ from app.api import analysis, categories, dashboard, opportunities, products, re
 from app.core.config import settings
 from app.core.logging import configure_logging, get_logger
 from app.database import init_db
-from app.database.session import engine
+from app.database.session import SessionLocal, engine
+from app.models.category import Category
+from app.seed.seed_data import seed as run_seed
 
 configure_logging()
 logger = get_logger(__name__)
@@ -60,10 +62,39 @@ def create_app() -> FastAPI:
 
     @app.on_event("startup")
     def on_startup() -> None:
-        """Create all database tables if they don't already exist."""
+        """
+        Create all database tables if they don't already exist, then
+        auto-seed mock data if the database is completely empty.
+
+        The auto-seed step exists for zero-manual-step deploys on managed
+        hosts (e.g. Render's free tier has no interactive shell to run
+        `python -m app.seed.seed_data` by hand). It is safe locally too:
+        `seed()` is idempotent per-category (skips any category that
+        already exists by name), and we additionally short-circuit here
+        with a cheap "any categories at all?" check so a populated dev
+        database is never touched. Any failure during seeding is logged
+        and swallowed rather than crashing app startup - a database
+        that's merely empty (not broken) should still serve requests.
+        """
         logger.info("Starting up - ensuring database tables exist...")
         init_db.create_all(engine)
         logger.info("Database ready at %s", settings.resolved_database_url)
+
+        db = SessionLocal()
+        try:
+            has_data = db.query(Category).first() is not None
+        finally:
+            db.close()
+
+        if not has_data:
+            logger.info("No categories found - running mock data auto-seed...")
+            try:
+                run_seed()
+            except Exception:
+                logger.exception(
+                    "Auto-seed failed; continuing startup with an empty database. "
+                    "Run `python -m app.seed.seed_data` manually to retry."
+                )
 
     @app.get("/health", tags=["health"])
     def health_check():
