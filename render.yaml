@@ -3,9 +3,15 @@
 # Lets you deploy the backend + a managed Postgres database in one step:
 # Render dashboard -> New -> Blueprint -> connect this GitHub repo -> Apply.
 #
-# DEEPSEEK_API_KEY and RAINFOREST_API_KEY are marked `sync: false`, which
-# means Render will prompt you to type them into its dashboard yourself
-# during setup (they are never stored in this repo).
+# DEEPSEEK_API_KEY, RAINFOREST_API_KEY, DATA_PROVIDER, and CORS_ORIGINS are
+# all marked `sync: false`. This is deliberate for every one of them, not
+# just the two secrets: any env var declared with a literal `value:` here
+# gets reset to that literal value every time you click "Manual Sync" on
+# the Blueprint (e.g. after recreating the database) - which would silently
+# undo a manual switch to DATA_PROVIDER=rainforest, or CORS_ORIGINS being
+# updated to include your Vercel URL, on the very next sync. `sync: false`
+# means Render prompts you once and then leaves whatever you've set in the
+# dashboard alone forever after, through any number of future syncs.
 #
 # If Blueprint auto-detection doesn't pick this up for any reason, the
 # equivalent manual setup is documented in docs/SETUP.md under
@@ -26,7 +32,9 @@ services:
           name: furniture-insight-db
           property: connectionString
       - key: DATA_PROVIDER
-        value: mock
+        sync: false
+        # Type "mock" (safe, offline default) or "rainforest" (real Amazon
+        # data - also requires RAINFOREST_API_KEY below) when prompted.
       - key: LLM_PROVIDER
         value: deepseek
       - key: DEEPSEEK_API_KEY
@@ -36,9 +44,11 @@ services:
       - key: CHROMA_PERSIST_DIR
         value: /app/data/chroma
       - key: CORS_ORIGINS
-        value: http://localhost:3000
-        # Update this after your Vercel frontend is deployed, e.g.
-        # "http://localhost:3000,https://your-app.vercel.app"
+        sync: false
+        # Type "http://localhost:3000,https://your-app.vercel.app" (once
+        # you know your Vercel URL) when prompted. Safe to leave as just
+        # "http://localhost:3000" initially and update later - see
+        # config.py's cors_origins_list fallback if this is ever left blank.
 
 databases:
   - name: furniture-insight-db

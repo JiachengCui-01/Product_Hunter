@@ -131,8 +131,15 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins_list(self) -> list[str]:
-        """CORS_ORIGINS as a clean list of origins (splits on comma, strips whitespace)."""
-        return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
+        """
+        CORS_ORIGINS as a clean list of origins (splits on comma, strips
+        whitespace). Falls back to localhost:3000 if this resolves empty
+        (e.g. a Render Blueprint `sync: false` field left blank on a
+        fresh deploy) - an accidentally-empty allow-list would otherwise
+        silently lock every frontend out with no clear error message.
+        """
+        origins = [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
+        return origins or ["http://localhost:3000"]
 
     @property
     def resolved_database_url(self) -> str:

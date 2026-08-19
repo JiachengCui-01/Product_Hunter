@@ -106,9 +106,16 @@ root that provisions both the web service and a free managed Postgres database.
    Render reads `render.yaml` and shows you two resources: the
    `furniture-insight-backend` web service and the `furniture-insight-db`
    Postgres database.
-3. When prompted for the `sync: false` env vars, paste in your own
-   `DEEPSEEK_API_KEY` (and `RAINFOREST_API_KEY` later, once you have one) —
-   type these directly into Render's dashboard field, not anywhere else.
+3. You'll be prompted for four `sync: false` fields (these are intentionally
+   *not* hardcoded in `render.yaml` - see the comment there - so a later
+   "Manual Sync" never silently resets them):
+   - `DEEPSEEK_API_KEY` — paste your key.
+   - `RAINFOREST_API_KEY` — leave blank for now if you don't have one yet.
+   - `DATA_PROVIDER` — type `mock` (safe default) or `rainforest` if you
+     already have a Rainforest key ready.
+   - `CORS_ORIGINS` — type `http://localhost:3000` for now; you'll add your
+     Vercel URL to this later (step 5c).
+   Type these directly into Render's dashboard fields, not anywhere else.
 4. Click **Apply**. Render builds the Docker image, provisions Postgres, wires
    `DATABASE_URL` automatically, and deploys. First boot will auto-create
    tables and auto-seed mock data (see `app/main.py` startup hook) — no manual
