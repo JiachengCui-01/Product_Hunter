@@ -8,9 +8,11 @@ import EmptyState from "@/components/ui/EmptyState";
 import { getCategories } from "@/lib/api/categories";
 import { ApiError } from "@/lib/api/client";
 import { Category } from "@/lib/types/category";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 /** Category Explorer: a grid of every tracked furniture category. */
 export default function CategoriesPage(): JSX.Element {
+  const { t } = useLanguage();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +28,7 @@ export default function CategoriesPage(): JSX.Element {
       })
       .catch((err: unknown) => {
         if (!cancelled) {
-          setError(err instanceof ApiError ? err.message : "Failed to load categories.");
+          setError(err instanceof ApiError ? err.message : t("categories.errorFallback"));
         }
       })
       .finally(() => {
@@ -36,23 +38,21 @@ export default function CategoriesPage(): JSX.Element {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
-    <PageContainer
-      heading="Categories"
-      description="Browse every furniture market segment tracked by the insight engine."
-    >
+    <PageContainer heading={t("categories.title")} description={t("categories.description")}>
       {loading && <SkeletonCardGrid count={6} />}
 
       {!loading && error && (
-        <EmptyState variant="error" title="Couldn't load categories" description={error} />
+        <EmptyState variant="error" title={t("categories.errorTitle")} description={error} />
       )}
 
       {!loading && !error && categories.length === 0 && (
         <EmptyState
-          title="No categories yet"
-          description="Run the backend seed script to populate furniture categories."
+          title={t("categories.emptyTitle")}
+          description={t("categories.emptyDescription")}
         />
       )}
 

@@ -1,7 +1,10 @@
+"use client";
+
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import { formatDate } from "@/lib/utils/formatters";
 import { OpportunityReport } from "@/lib/types/opportunity";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export interface OpportunityReportDetailProps {
   report: OpportunityReport;
@@ -28,6 +31,7 @@ function Section({
 export default function OpportunityReportDetail({
   report,
 }: OpportunityReportDetailProps): JSX.Element {
+  const { t } = useLanguage();
   return (
     <Card className="flex flex-col gap-6">
       <div>
@@ -36,21 +40,22 @@ export default function OpportunityReportDetail({
             {report.product_name}
           </h2>
           <span className="shrink-0 text-xs text-muted">
-            Generated {formatDate(report.created_at)}
+            {t("recommendations.generatedPrefix")} {formatDate(report.created_at)}
           </span>
         </div>
         <p className="mt-1 text-sm text-muted">
-          Target customer: <span className="text-foreground">{report.target_customer}</span>
+          {t("recommendations.targetCustomerLabel")}{" "}
+          <span className="text-foreground">{report.target_customer}</span>
         </p>
       </div>
 
-      <Section title="Recommended Solution">
+      <Section title={t("recommendations.recommendedSolutionHeading")}>
         <p className="text-sm leading-relaxed text-foreground">{report.solution}</p>
       </Section>
 
-      <Section title="Pain Points Addressed">
+      <Section title={t("recommendations.painPointsAddressedHeading")}>
         {report.pain_points.length === 0 ? (
-          <p className="text-sm text-muted">None recorded.</p>
+          <p className="text-sm text-muted">{t("recommendations.noneRecorded")}</p>
         ) : (
           <ul className="list-inside list-disc space-y-1.5 text-sm text-foreground">
             {report.pain_points.map((p, i) => (
@@ -60,9 +65,9 @@ export default function OpportunityReportDetail({
         )}
       </Section>
 
-      <Section title="Proposed Features">
+      <Section title={t("recommendations.proposedFeaturesHeading")}>
         {report.features.length === 0 ? (
-          <p className="text-sm text-muted">None recorded.</p>
+          <p className="text-sm text-muted">{t("recommendations.noneRecorded")}</p>
         ) : (
           <div className="flex flex-wrap gap-1.5">
             {report.features.map((f, i) => (
@@ -74,9 +79,9 @@ export default function OpportunityReportDetail({
         )}
       </Section>
 
-      <Section title="Selling Points">
+      <Section title={t("recommendations.sellingPointsHeading")}>
         {report.selling_points.length === 0 ? (
-          <p className="text-sm text-muted">None recorded.</p>
+          <p className="text-sm text-muted">{t("recommendations.noneRecorded")}</p>
         ) : (
           <ul className="list-inside list-disc space-y-1.5 text-sm text-foreground">
             {report.selling_points.map((s, i) => (

@@ -1,4 +1,7 @@
+"use client";
+
 import Card from "@/components/ui/Card";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export interface SentimentColumnsProps {
   positive: string[];
@@ -34,19 +37,20 @@ export default function SentimentColumns({
   positive,
   negative,
 }: SentimentColumnsProps): JSX.Element {
+  const { t } = useLanguage();
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <Card>
         <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-success">
-          <span aria-hidden="true">+</span> Users Love
+          <span aria-hidden="true">+</span> {t("reviews.usersLoveHeading")}
         </h3>
-        <SentimentList items={positive} emptyLabel="No standout positives detected." />
+        <SentimentList items={positive} emptyLabel={t("reviews.noPositives")} />
       </Card>
       <Card>
         <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-danger">
-          <span aria-hidden="true">−</span> Pain Points
+          <span aria-hidden="true">−</span> {t("reviews.painPointsHeading")}
         </h3>
-        <SentimentList items={negative} emptyLabel="No notable complaints detected." />
+        <SentimentList items={negative} emptyLabel={t("reviews.noNegatives")} />
       </Card>
     </div>
   );

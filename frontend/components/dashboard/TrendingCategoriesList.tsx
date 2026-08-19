@@ -1,9 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import Card from "@/components/ui/Card";
 import EmptyState from "@/components/ui/EmptyState";
 import GrowthBadge from "@/components/market/GrowthBadge";
 import { formatScore } from "@/lib/utils/formatters";
 import { TrendingCategorySummary } from "@/lib/types/dashboard";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export interface TrendingCategoriesListProps {
   categories: TrendingCategorySummary[];
@@ -13,11 +16,13 @@ export interface TrendingCategoriesListProps {
 export default function TrendingCategoriesList({
   categories,
 }: TrendingCategoriesListProps): JSX.Element {
+  const { t } = useLanguage();
+
   if (categories.length === 0) {
     return (
       <EmptyState
-        title="No trending categories yet"
-        description="Trend data will appear here once the backend has computed category trend scores."
+        title={t("dashboard.trendingEmptyTitle")}
+        description={t("dashboard.trendingEmptyDescription")}
       />
     );
   }
@@ -41,7 +46,7 @@ export default function TrendingCategoriesList({
               </div>
               <div className="flex shrink-0 items-center gap-3">
                 <span className="text-sm text-muted">
-                  Score {formatScore(cat.trend_score)}
+                  {t("dashboard.scoreLabel")} {formatScore(cat.trend_score)}
                 </span>
                 <GrowthBadge growth={cat.growth} />
               </div>

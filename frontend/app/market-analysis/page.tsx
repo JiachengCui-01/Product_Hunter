@@ -14,6 +14,7 @@ import { getTrend } from "@/lib/api/trends";
 import { ApiError } from "@/lib/api/client";
 import { Category } from "@/lib/types/category";
 import { MarketTrend } from "@/lib/types/trend";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 /**
  * Inner content component — isolated so `useSearchParams()` (which requires a
@@ -21,6 +22,7 @@ import { MarketTrend } from "@/lib/types/trend";
  * to bail out of static optimization at build time.
  */
 function MarketAnalysisContent(): JSX.Element {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const initialCategoryId = searchParams.get("category_id");
 
@@ -47,7 +49,7 @@ function MarketAnalysisContent(): JSX.Element {
       .catch((err: unknown) => {
         if (!cancelled) {
           setCategoriesError(
-            err instanceof ApiError ? err.message : "Failed to load categories."
+            err instanceof ApiError ? err.message : t("marketAnalysis.categoriesErrorFallback")
           );
         }
       })
@@ -75,7 +77,7 @@ function MarketAnalysisContent(): JSX.Element {
         if (!cancelled) {
           setTrend(null);
           setTrendError(
-            err instanceof ApiError ? err.message : "Failed to load trend data."
+            err instanceof ApiError ? err.message : t("marketAnalysis.trendErrorFallback")
           );
         }
       })
@@ -86,23 +88,24 @@ function MarketAnalysisContent(): JSX.Element {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
   return (
     <PageContainer
-      heading="Market Analysis"
-      description="Inspect trend score, growth direction, and top keywords for a category."
+      heading={t("marketAnalysis.title")}
+      description={t("marketAnalysis.description")}
     >
       <div className="mb-6 max-w-xs">
         <label htmlFor="category-select" className="mb-1.5 block text-sm font-medium text-foreground">
-          Category
+          {t("marketAnalysis.categoryLabel")}
         </label>
         {categoriesLoading ? (
           <Skeleton className="h-10 w-full" />
         ) : categoriesError ? (
-          <EmptyState variant="error" title="Couldn't load categories" description={categoriesError} />
+          <EmptyState variant="error" title={t("marketAnalysis.categoriesErrorTitle")} description={categoriesError} />
         ) : categories.length === 0 ? (
-          <EmptyState title="No categories yet" description="Run the backend seed script first." />
+          <EmptyState title={t("marketAnalysis.noCategoriesTitle")} description={t("marketAnalysis.noCategoriesDescription")} />
         ) : (
           <select
             id="category-select"
@@ -128,7 +131,7 @@ function MarketAnalysisContent(): JSX.Element {
       )}
 
       {!trendLoading && trendError && (
-        <EmptyState variant="error" title="Couldn't load market trend" description={trendError} />
+        <EmptyState variant="error" title={t("marketAnalysis.trendErrorTitle")} description={trendError} />
       )}
 
       {!trendLoading && !trendError && trend && (
@@ -141,22 +144,31 @@ function MarketAnalysisContent(): JSX.Element {
             <TrendScoreGauge score={trend.trend_score} />
           </Card>
           <Card>
-            <h3 className="mb-3 text-sm font-semibold text-foreground">Top Keywords</h3>
+            <h3 className="mb-3 text-sm font-semibold text-foreground">{t("marketAnalysis.topKeywordsHeading")}</h3>
             <KeywordCloud keywords={trend.keywords} />
           </Card>
         </div>
       )}
 
       {!trendLoading && !trendError && !trend && !categoriesLoading && categories.length > 0 && (
-        <EmptyState title="Select a category" description="Choose a category above to see its trend data." />
+        <EmptyState title={t("marketAnalysis.selectCategoryTitle")} description={t("marketAnalysis.selectCategoryDescription")} />
       )}
+    </PageContainer>
+  );
+}
+
+function MarketAnalysisFallback(): JSX.Element {
+  const { t } = useLanguage();
+  return (
+    <PageContainer heading={t("marketAnalysis.title")}>
+      <Skeleton className="h-40 w-full" />
     </PageContainer>
   );
 }
 
 export default function MarketAnalysisPage(): JSX.Element {
   return (
-    <Suspense fallback={<PageContainer heading="Market Analysis"><Skeleton className="h-40 w-full" /></PageContainer>}>
+    <Suspense fallback={<MarketAnalysisFallback />}>
       <MarketAnalysisContent />
     </Suspense>
   );

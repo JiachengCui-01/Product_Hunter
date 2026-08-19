@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Sidebar from "@/components/layout/Sidebar";
 import TopBar from "@/components/layout/TopBar";
+import { LanguageProvider } from "@/lib/i18n/LanguageContext";
 
 // Inter is the closest system-adjacent font to the Notion/Linear aesthetic.
 const inter = Inter({
@@ -27,14 +28,20 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>): JSX.Element {
+  // `lang` starts as "en" on the server; LanguageProvider patches
+  // `document.documentElement.lang` client-side once the persisted locale is
+  // known, since this layout must stay a server component (it exports
+  // `metadata`) and can't read the client-only locale state itself.
   return (
     <html lang="en" className={inter.variable}>
       <body className="flex h-screen overflow-hidden bg-background font-sans text-foreground antialiased">
-        <Sidebar />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <TopBar />
-          <main className="flex-1 overflow-y-auto">{children}</main>
-        </div>
+        <LanguageProvider>
+          <Sidebar />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <TopBar />
+            <main className="flex-1 overflow-y-auto">{children}</main>
+          </div>
+        </LanguageProvider>
       </body>
     </html>
   );

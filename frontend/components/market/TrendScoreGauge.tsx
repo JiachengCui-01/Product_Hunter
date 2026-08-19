@@ -1,4 +1,7 @@
+"use client";
+
 import { formatScore } from "@/lib/utils/formatters";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export interface TrendScoreGaugeProps {
   score: number;
@@ -13,13 +16,14 @@ function scoreColor(score: number): string {
 
 /** Horizontal 0-100 gauge/bar visualizing a category's trend score. */
 export default function TrendScoreGauge({ score }: TrendScoreGaugeProps): JSX.Element {
+  const { t } = useLanguage();
   const clamped = Math.max(0, Math.min(100, score));
 
   return (
     <div className="w-full">
       <div className="mb-2 flex items-end justify-between">
         <span className="text-xs font-medium uppercase tracking-wide text-muted">
-          Trend Score
+          {t("market.trendScoreLabel")}
         </span>
         <span className="text-3xl font-semibold tracking-tight text-foreground">
           {formatScore(clamped)}

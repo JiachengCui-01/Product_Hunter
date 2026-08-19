@@ -12,9 +12,11 @@ import { getProducts } from "@/lib/api/products";
 import { ApiError } from "@/lib/api/client";
 import { Category } from "@/lib/types/category";
 import { Product } from "@/lib/types/product";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 /** Isolated so useSearchParams() doesn't force a CSR bailout at the page level. */
 function ProductRankingContent(): JSX.Element {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const initialCategoryId = searchParams.get("category_id") ?? "";
 
@@ -31,8 +33,9 @@ function ProductRankingContent(): JSX.Element {
     getCategories()
       .then(setCategories)
       .catch((err: unknown) => {
-        setCategoriesError(err instanceof ApiError ? err.message : "Failed to load categories.");
+        setCategoriesError(err instanceof ApiError ? err.message : t("products.categoriesErrorFallback"));
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Fetch products whenever the category filter changes, sorted by opportunity_score desc.
@@ -51,7 +54,7 @@ function ProductRankingContent(): JSX.Element {
       })
       .catch((err: unknown) => {
         if (!cancelled) {
-          setError(err instanceof ApiError ? err.message : "Failed to load products.");
+          setError(err instanceof ApiError ? err.message : t("products.errorFallback"));
         }
       })
       .finally(() => {
@@ -61,16 +64,17 @@ function ProductRankingContent(): JSX.Element {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedId]);
 
   return (
     <PageContainer
-      heading="Product Ranking"
-      description="Products ranked by whitespace opportunity score, with current demand for context."
+      heading={t("products.title")}
+      description={t("products.description")}
     >
       <div className="mb-6 max-w-xs">
         <label htmlFor="category-filter" className="mb-1.5 block text-sm font-medium text-foreground">
-          Filter by category
+          {t("products.filterLabel")}
         </label>
         <select
           id="category-filter"
@@ -78,7 +82,7 @@ function ProductRankingContent(): JSX.Element {
           onChange={(e) => setSelectedId(e.target.value)}
           className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
         >
-          <option value="">All categories</option>
+          <option value="">{t("products.allCategories")}</option>
           {categories.map((cat) => (
             <option key={cat.id} value={cat.id}>
               {cat.name}
@@ -97,7 +101,7 @@ function ProductRankingContent(): JSX.Element {
       )}
 
       {!loading && error && (
-        <EmptyState variant="error" title="Couldn't load products" description={error} />
+        <EmptyState variant="error" title={t("products.errorTitle")} description={error} />
       )}
 
       {!loading && !error && (
@@ -109,15 +113,18 @@ function ProductRankingContent(): JSX.Element {
   );
 }
 
+function ProductsFallback(): JSX.Element {
+  const { t } = useLanguage();
+  return (
+    <PageContainer heading={t("products.title")}>
+      <Skeleton className="h-64 w-full" />
+    </PageContainer>
+  );
+}
+
 export default function ProductsPage(): JSX.Element {
   return (
-    <Suspense
-      fallback={
-        <PageContainer heading="Product Ranking">
-          <Skeleton className="h-64 w-full" />
-        </PageContainer>
-      }
-    >
+    <Suspense fallback={<ProductsFallback />}>
       <ProductRankingContent />
     </Suspense>
   );

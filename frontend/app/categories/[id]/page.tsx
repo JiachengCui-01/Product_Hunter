@@ -12,6 +12,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import { getCategory } from "@/lib/api/categories";
 import { ApiError } from "@/lib/api/client";
 import { Category } from "@/lib/types/category";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 /**
  * Category detail page: description, keyword chips, and quick-link buttons
@@ -20,6 +21,7 @@ import { Category } from "@/lib/types/category";
 export default function CategoryDetailPage(): JSX.Element {
   const params = useParams<{ id: string }>();
   const categoryId = params?.id;
+  const { t } = useLanguage();
 
   const [category, setCategory] = useState<Category | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -38,7 +40,7 @@ export default function CategoryDetailPage(): JSX.Element {
       .catch((err: unknown) => {
         if (!cancelled) {
           setError(
-            err instanceof ApiError ? err.message : "Failed to load this category."
+            err instanceof ApiError ? err.message : t("categoryDetail.errorFallback")
           );
         }
       })
@@ -49,10 +51,11 @@ export default function CategoryDetailPage(): JSX.Element {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categoryId]);
 
   return (
-    <PageContainer heading={category?.name ?? "Category"}>
+    <PageContainer heading={category?.name ?? t("categoryDetail.heading")}>
       {loading && (
         <Card className="space-y-3">
           <Skeleton className="h-5 w-1/3" />
@@ -62,13 +65,13 @@ export default function CategoryDetailPage(): JSX.Element {
       )}
 
       {!loading && error && (
-        <EmptyState variant="error" title="Couldn't load this category" description={error} />
+        <EmptyState variant="error" title={t("categoryDetail.errorTitle")} description={error} />
       )}
 
       {!loading && !error && !category && (
         <EmptyState
-          title="Category not found"
-          description="This category may have been removed, or the backend has no matching record."
+          title={t("categoryDetail.notFoundTitle")}
+          description={t("categoryDetail.notFoundDescription")}
         />
       )}
 
@@ -80,7 +83,7 @@ export default function CategoryDetailPage(): JSX.Element {
             </p>
             <div>
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
-                Keywords
+                {t("categoryDetail.keywordsHeading")}
               </h3>
               <CategoryKeywordChips keywords={category.keywords} />
             </div>
@@ -88,10 +91,10 @@ export default function CategoryDetailPage(): JSX.Element {
 
           <div className="flex flex-wrap gap-3">
             <Link href={`/market-analysis?category_id=${category.id}`}>
-              <Button variant="primary">View Market Analysis</Button>
+              <Button variant="primary">{t("categoryDetail.viewMarketAnalysis")}</Button>
             </Link>
             <Link href={`/products?category_id=${category.id}`}>
-              <Button variant="secondary">View Product Ranking</Button>
+              <Button variant="secondary">{t("categoryDetail.viewProductRanking")}</Button>
             </Link>
           </div>
         </div>

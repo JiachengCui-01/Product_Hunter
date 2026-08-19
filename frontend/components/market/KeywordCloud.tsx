@@ -1,4 +1,7 @@
+"use client";
+
 import EmptyState from "@/components/ui/EmptyState";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export interface KeywordCloudProps {
   keywords: string[];
@@ -10,8 +13,10 @@ export interface KeywordCloudProps {
  * without pulling in a charting dependency.
  */
 export default function KeywordCloud({ keywords }: KeywordCloudProps): JSX.Element {
+  const { t } = useLanguage();
+
   if (keywords.length === 0) {
-    return <EmptyState title="No keywords available" />;
+    return <EmptyState title={t("market.keywordCloudEmpty")} />;
   }
 
   return (

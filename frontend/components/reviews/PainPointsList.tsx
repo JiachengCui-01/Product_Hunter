@@ -1,6 +1,9 @@
+"use client";
+
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import EmptyState from "@/components/ui/EmptyState";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export interface PainPointsListProps {
   painPoints: string[];
@@ -12,11 +15,13 @@ export interface PainPointsListProps {
  * into the AI Recommendation generator.
  */
 export default function PainPointsList({ painPoints }: PainPointsListProps): JSX.Element {
+  const { t } = useLanguage();
+
   if (painPoints.length === 0) {
     return (
       <EmptyState
-        title="No specific pain points identified"
-        description="The analysis did not surface granular pain points from the submitted reviews."
+        title={t("reviews.noPainPointsTitle")}
+        description={t("reviews.noPainPointsDescription")}
       />
     );
   }
@@ -24,7 +29,7 @@ export default function PainPointsList({ painPoints }: PainPointsListProps): JSX
   return (
     <Card>
       <h3 className="mb-3 text-sm font-semibold text-foreground">
-        Specific Pain Points
+        {t("reviews.specificPainPointsHeading")}
       </h3>
       <ul className="space-y-2.5">
         {painPoints.map((point, i) => (

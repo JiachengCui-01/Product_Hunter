@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import Button from "@/components/ui/Button";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export interface ReviewInputFormProps {
   /** Called with the parsed, non-empty review lines when the user submits. */
@@ -18,6 +19,7 @@ export default function ReviewInputForm({
   onSubmit,
   loading = false,
 }: ReviewInputFormProps): JSX.Element {
+  const { t } = useLanguage();
   const [text, setText] = useState<string>("");
 
   const lines = text
@@ -34,24 +36,22 @@ export default function ReviewInputForm({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
       <label htmlFor="reviews" className="text-sm font-medium text-foreground">
-        Paste customer reviews (one per line)
+        {t("reviews.formLabel")}
       </label>
       <textarea
         id="reviews"
         value={text}
         onChange={(e) => setText(e.target.value)}
-        placeholder={
-          "The chair is comfortable but the lumbar support wears out after 6 months.\nGreat assembly instructions, arrived quickly.\nToo expensive for the material quality."
-        }
+        placeholder={t("reviews.placeholder")}
         rows={8}
         className="w-full resize-y rounded-lg border border-border bg-white px-3 py-2 text-sm text-foreground placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-accent"
       />
       <div className="flex items-center justify-between">
         <span className="text-xs text-muted">
-          {lines.length} review{lines.length === 1 ? "" : "s"} detected
+          {lines.length} {t(lines.length === 1 ? "reviews.detectedSingular" : "reviews.detectedPlural")}
         </span>
         <Button type="submit" loading={loading} disabled={lines.length === 0}>
-          Analyze Reviews
+          {t("reviews.analyzeButton")}
         </Button>
       </div>
     </form>

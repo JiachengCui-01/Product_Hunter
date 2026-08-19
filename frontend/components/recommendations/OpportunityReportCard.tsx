@@ -1,6 +1,9 @@
+"use client";
+
 import Card from "@/components/ui/Card";
 import { formatDate } from "@/lib/utils/formatters";
 import { OpportunityReport } from "@/lib/types/opportunity";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export interface OpportunityReportCardProps {
   report: OpportunityReport;
@@ -14,6 +17,7 @@ export default function OpportunityReportCard({
   onClick,
   active = false,
 }: OpportunityReportCardProps): JSX.Element {
+  const { t } = useLanguage();
   return (
     <button
       type="button"
@@ -35,7 +39,7 @@ export default function OpportunityReportCard({
         </div>
         <p className="line-clamp-2 text-sm text-muted">{report.solution}</p>
         <p className="text-xs font-medium text-muted">
-          Target: <span className="text-foreground">{report.target_customer}</span>
+          {t("recommendations.targetLabel")} <span className="text-foreground">{report.target_customer}</span>
         </p>
       </Card>
     </button>

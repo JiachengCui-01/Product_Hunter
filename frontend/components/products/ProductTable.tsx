@@ -6,6 +6,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import OpportunityScoreCell from "@/components/products/OpportunityScoreCell";
 import { formatCurrency, formatNumber } from "@/lib/utils/formatters";
 import { Product, ProductSortField, SortOrder } from "@/lib/types/product";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export interface ProductTableProps {
   products: Product[];
@@ -13,17 +14,17 @@ export interface ProductTableProps {
 
 interface ColumnDef {
   field: ProductSortField;
-  label: string;
+  labelKey: string;
   align?: "left" | "right";
 }
 
 const COLUMNS: ColumnDef[] = [
-  { field: "name", label: "Product" },
-  { field: "price", label: "Price", align: "right" },
-  { field: "rating", label: "Rating", align: "right" },
-  { field: "review_count", label: "Reviews", align: "right" },
-  { field: "demand_score", label: "Demand", align: "right" },
-  { field: "opportunity_score", label: "Opportunity", align: "right" },
+  { field: "name", labelKey: "products.columnProduct" },
+  { field: "price", labelKey: "products.columnPrice", align: "right" },
+  { field: "rating", labelKey: "products.columnRating", align: "right" },
+  { field: "review_count", labelKey: "products.columnReviews", align: "right" },
+  { field: "demand_score", labelKey: "products.columnDemand", align: "right" },
+  { field: "opportunity_score", labelKey: "products.columnOpportunity", align: "right" },
 ];
 
 /**
@@ -32,6 +33,7 @@ const COLUMNS: ColumnDef[] = [
  * this component lets the user re-sort by any column by clicking the header).
  */
 export default function ProductTable({ products }: ProductTableProps): JSX.Element {
+  const { t } = useLanguage();
   const [sortField, setSortField] = useState<ProductSortField>("opportunity_score");
   const [order, setOrder] = useState<SortOrder>("desc");
 
@@ -62,8 +64,8 @@ export default function ProductTable({ products }: ProductTableProps): JSX.Eleme
   if (products.length === 0) {
     return (
       <EmptyState
-        title="No products found"
-        description="Try a different category filter, or make sure the backend has product data seeded."
+        title={t("products.emptyTitle")}
+        description={t("products.emptyDescription")}
       />
     );
   }
@@ -81,7 +83,7 @@ export default function ProductTable({ products }: ProductTableProps): JSX.Eleme
               onClick={() => handleSort(col.field)}
             >
               <span className="inline-flex items-center gap-1">
-                {col.label}
+                {t(col.labelKey)}
                 {sortField === col.field && (
                   <span aria-hidden="true">{order === "asc" ? "▲" : "▼"}</span>
                 )}

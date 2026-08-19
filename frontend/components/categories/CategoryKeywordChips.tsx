@@ -1,3 +1,7 @@
+"use client";
+
+import { useLanguage } from "@/lib/i18n/LanguageContext";
+
 export interface CategoryKeywordChipsProps {
   keywords: string[];
   /** Cap the number of chips rendered before truncating with a "+N" chip. */
@@ -9,8 +13,10 @@ export default function CategoryKeywordChips({
   keywords,
   limit,
 }: CategoryKeywordChipsProps): JSX.Element {
+  const { t } = useLanguage();
+
   if (keywords.length === 0) {
-    return <span className="text-xs text-muted">No keywords</span>;
+    return <span className="text-xs text-muted">{t("categoryKeywordChips.none")}</span>;
   }
 
   const visible = limit ? keywords.slice(0, limit) : keywords;

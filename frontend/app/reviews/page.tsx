@@ -10,6 +10,7 @@ import PainPointsList from "@/components/reviews/PainPointsList";
 import { analyzeReviews } from "@/lib/api/analysis";
 import { ApiError } from "@/lib/api/client";
 import { ReviewAnalysisResult } from "@/lib/types/analysis";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 /**
  * Review Insight page: paste raw reviews, POST them to the NLP analysis
@@ -17,6 +18,7 @@ import { ReviewAnalysisResult } from "@/lib/types/analysis";
  * No fetch-on-mount here — everything is driven by the form submission.
  */
 export default function ReviewsPage(): JSX.Element {
+  const { t } = useLanguage();
   const [result, setResult] = useState<ReviewAnalysisResult | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +33,7 @@ export default function ReviewsPage(): JSX.Element {
       });
       setResult(analysis);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to analyze reviews.");
+      setError(err instanceof ApiError ? err.message : t("reviews.analysisFailedFallback"));
     } finally {
       setLoading(false);
     }
@@ -39,8 +41,8 @@ export default function ReviewsPage(): JSX.Element {
 
   return (
     <PageContainer
-      heading="Review Insight"
-      description="Paste customer reviews to surface sentiment and specific product pain points."
+      heading={t("reviews.title")}
+      description={t("reviews.description")}
     >
       <div className="space-y-6">
         <Card>
@@ -55,7 +57,7 @@ export default function ReviewsPage(): JSX.Element {
         )}
 
         {!loading && error && (
-          <EmptyState variant="error" title="Analysis failed" description={error} />
+          <EmptyState variant="error" title={t("reviews.analysisFailedTitle")} description={error} />
         )}
 
         {!loading && !error && result && (
@@ -67,8 +69,8 @@ export default function ReviewsPage(): JSX.Element {
 
         {!loading && !error && !result && (
           <EmptyState
-            title="No analysis yet"
-            description="Paste one or more reviews above and click Analyze Reviews to get started."
+            title={t("reviews.noAnalysisTitle")}
+            description={t("reviews.noAnalysisDescription")}
           />
         )}
       </div>

@@ -13,9 +13,11 @@ import { generateOpportunity, getOpportunities } from "@/lib/api/opportunities";
 import { ApiError } from "@/lib/api/client";
 import { Category } from "@/lib/types/category";
 import { OpportunityReport } from "@/lib/types/opportunity";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 /** Isolated so useSearchParams() doesn't force a CSR bailout at the page level. */
 function RecommendationsContent(): JSX.Element {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const initialCategoryId = searchParams.get("category_id") ?? "";
 
@@ -40,7 +42,7 @@ function RecommendationsContent(): JSX.Element {
         if (!selectedId && data.length > 0) setSelectedId(String(data[0].id));
       })
       .catch((err: unknown) => {
-        setCategoriesError(err instanceof ApiError ? err.message : "Failed to load categories.");
+        setCategoriesError(err instanceof ApiError ? err.message : t("recommendations.categoriesErrorFallback"));
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -55,7 +57,7 @@ function RecommendationsContent(): JSX.Element {
         setSelectedReport((prev) => prev ?? data[0] ?? null);
       })
       .catch((err: unknown) => {
-        setReportsError(err instanceof ApiError ? err.message : "Failed to load past reports.");
+        setReportsError(err instanceof ApiError ? err.message : t("recommendations.reportsErrorFallback"));
       })
       .finally(() => setReportsLoading(false));
   }
@@ -78,7 +80,7 @@ function RecommendationsContent(): JSX.Element {
       setSelectedReport(report);
     } catch (err) {
       setGenerateError(
-        err instanceof ApiError ? err.message : "Failed to generate a new opportunity report."
+        err instanceof ApiError ? err.message : t("recommendations.generationFailedFallback")
       );
     } finally {
       setGenerating(false);
@@ -87,17 +89,17 @@ function RecommendationsContent(): JSX.Element {
 
   return (
     <PageContainer
-      heading="AI Recommendation"
-      description="Generate AI-backed product opportunity reports for a category and review past reports."
+      heading={t("recommendations.title")}
+      description={t("recommendations.description")}
       actions={
         <Button onClick={handleGenerate} loading={generating} disabled={!selectedId}>
-          Generate Report
+          {t("recommendations.generateButton")}
         </Button>
       }
     >
       <div className="mb-6 max-w-xs">
         <label htmlFor="rec-category" className="mb-1.5 block text-sm font-medium text-foreground">
-          Category
+          {t("recommendations.categoryLabel")}
         </label>
         <select
           id="rec-category"
@@ -105,7 +107,7 @@ function RecommendationsContent(): JSX.Element {
           onChange={(e) => setSelectedId(e.target.value)}
           className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent"
         >
-          {categories.length === 0 && <option value="">No categories available</option>}
+          {categories.length === 0 && <option value="">{t("recommendations.noCategoriesOption")}</option>}
           {categories.map((cat) => (
             <option key={cat.id} value={cat.id}>
               {cat.name}
@@ -117,21 +119,21 @@ function RecommendationsContent(): JSX.Element {
 
       {generateError && (
         <div className="mb-4">
-          <EmptyState variant="error" title="Generation failed" description={generateError} />
+          <EmptyState variant="error" title={t("recommendations.generationFailedTitle")} description={generateError} />
         </div>
       )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
         <div className="lg:col-span-2">
-          <h3 className="mb-3 text-sm font-semibold text-foreground">Past Reports</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">{t("recommendations.pastReportsHeading")}</h3>
           {reportsLoading && <SkeletonCardGrid count={2} />}
           {!reportsLoading && reportsError && (
-            <EmptyState variant="error" title="Couldn't load reports" description={reportsError} />
+            <EmptyState variant="error" title={t("recommendations.reportsErrorTitle")} description={reportsError} />
           )}
           {!reportsLoading && !reportsError && reports.length === 0 && (
             <EmptyState
-              title="No reports yet"
-              description="Click Generate Report to create the first AI opportunity report for this category."
+              title={t("recommendations.noReportsTitle")}
+              description={t("recommendations.noReportsDescription")}
             />
           )}
           {!reportsLoading && !reportsError && reports.length > 0 && (
@@ -149,11 +151,11 @@ function RecommendationsContent(): JSX.Element {
         </div>
 
         <div className="lg:col-span-3">
-          <h3 className="mb-3 text-sm font-semibold text-foreground">Report Detail</h3>
+          <h3 className="mb-3 text-sm font-semibold text-foreground">{t("recommendations.reportDetailHeading")}</h3>
           {selectedReport ? (
             <OpportunityReportDetail report={selectedReport} />
           ) : (
-            <EmptyState title="No report selected" description="Select or generate a report to view its detail." />
+            <EmptyState title={t("recommendations.noReportSelectedTitle")} description={t("recommendations.noReportSelectedDescription")} />
           )}
         </div>
       </div>
@@ -161,15 +163,18 @@ function RecommendationsContent(): JSX.Element {
   );
 }
 
+function RecommendationsFallback(): JSX.Element {
+  const { t } = useLanguage();
+  return (
+    <PageContainer heading={t("recommendations.title")}>
+      <Skeleton className="h-64 w-full" />
+    </PageContainer>
+  );
+}
+
 export default function RecommendationsPage(): JSX.Element {
   return (
-    <Suspense
-      fallback={
-        <PageContainer heading="AI Recommendation">
-          <Skeleton className="h-64 w-full" />
-        </PageContainer>
-      }
-    >
+    <Suspense fallback={<RecommendationsFallback />}>
       <RecommendationsContent />
     </Suspense>
   );

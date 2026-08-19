@@ -11,12 +11,14 @@ import { getDashboardSummary } from "@/lib/api/dashboard";
 import { ApiError } from "@/lib/api/client";
 import { DashboardSummary } from "@/lib/types/dashboard";
 import { formatNumber } from "@/lib/utils/formatters";
+import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 /**
  * Dashboard landing page: three headline stat cards plus a ranked list of
  * currently trending categories, sourced from GET /api/dashboard/summary.
  */
 export default function DashboardPage(): JSX.Element {
+  const { t } = useLanguage();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +35,7 @@ export default function DashboardPage(): JSX.Element {
       .catch((err: unknown) => {
         if (!cancelled) {
           setError(
-            err instanceof ApiError ? err.message : "Failed to load dashboard summary."
+            err instanceof ApiError ? err.message : t("dashboard.errorFallback")
           );
         }
       })
@@ -44,15 +46,13 @@ export default function DashboardPage(): JSX.Element {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const topCategory = summary?.trending_categories?.[0];
 
   return (
-    <PageContainer
-      heading="Dashboard"
-      description="High-level snapshot of tracked furniture categories and generated reports."
-    >
+    <PageContainer heading={t("dashboard.title")} description={t("dashboard.description")}>
       {loading && (
         <div className="space-y-6">
           <SkeletonCardGrid count={3} />
@@ -65,7 +65,7 @@ export default function DashboardPage(): JSX.Element {
       {!loading && error && (
         <EmptyState
           variant="error"
-          title="Couldn't load the dashboard"
+          title={t("dashboard.errorTitle")}
           description={error}
         />
       )}
@@ -74,25 +74,29 @@ export default function DashboardPage(): JSX.Element {
         <div className="space-y-6">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <StatCard
-              label="Tracked Categories"
+              label={t("dashboard.statCategories")}
               value={formatNumber(summary.category_count)}
-              hint="Furniture segments monitored"
+              hint={t("dashboard.statCategoriesHint")}
             />
             <StatCard
-              label="Opportunity Reports"
+              label={t("dashboard.statReports")}
               value={formatNumber(summary.report_count)}
-              hint="AI-generated so far"
+              hint={t("dashboard.statReportsHint")}
             />
             <StatCard
-              label="Top Trending Category"
+              label={t("dashboard.statTopCategory")}
               value={topCategory ? topCategory.name : "—"}
-              hint={topCategory ? `Score ${topCategory.trend_score}` : "No trend data yet"}
+              hint={
+                topCategory
+                  ? `${t("dashboard.scoreLabel")} ${topCategory.trend_score}`
+                  : t("dashboard.statTopCategoryHintNone")
+              }
             />
           </div>
 
           <div>
             <h3 className="mb-3 text-sm font-semibold text-foreground">
-              Trending Categories
+              {t("dashboard.trendingCategoriesHeading")}
             </h3>
             <TrendingCategoriesList categories={summary.trending_categories ?? []} />
           </div>
@@ -101,8 +105,8 @@ export default function DashboardPage(): JSX.Element {
 
       {!loading && !error && !summary && (
         <EmptyState
-          title="No dashboard data yet"
-          description="Run the backend seed script to populate categories and reports."
+          title={t("dashboard.emptyTitle")}
+          description={t("dashboard.emptyDescription")}
         />
       )}
     </PageContainer>
