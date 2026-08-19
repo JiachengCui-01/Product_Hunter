@@ -67,12 +67,26 @@ This starts Postgres + the backend container pointed at it. No code changes are
 needed — every model uses cross-dialect-safe SQLAlchemy types (see
 `docs/ARCHITECTURE.md`).
 
-## 4. Switching to a real market-data source (optional, later)
+## 4. Switching to a real market-data source
 
-Once you have a Rainforest API (or similar) key:
-1. Set `RAINFOREST_API_KEY=...` and `DATA_PROVIDER=rainforest` in `backend/.env`.
-2. Fill in the response-mapping TODOs in `backend/app/services/rainforest_provider.py`.
-3. Restart the backend — no other code changes needed (see `docs/ARCHITECTURE.md`).
+`RainforestProvider` is fully implemented and verified against the live
+Rainforest API - no code changes needed, just:
+1. Get a key at [app.rainforestapi.com/signup](https://app.rainforestapi.com/signup)
+   (free 100-request trial, no card required).
+2. Set `RAINFOREST_API_KEY=...` and `DATA_PROVIDER=rainforest` in `backend/.env`.
+3. Restart the backend and re-run the seed script (or just start the API - it
+   auto-seeds an empty DB on startup) to get real Amazon-derived
+   categories/trends/products.
+
+Known limitation: Rainforest's `type=reviews` endpoint is currently down on
+their end (confirmed independently, not specific to this integration) - real
+review data won't populate until that recovers on their side. Everything else
+(trends, products, opportunity scoring) uses fully real data today. Reviews
+you submit yourself via the Review Insight page work regardless, since that
+path never calls the provider.
+
+For production (Render), set the same two env vars in the Render dashboard
+(see step 5a below) instead of `backend/.env`.
 
 ## 5. Deployment
 

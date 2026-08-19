@@ -56,11 +56,27 @@ three methods (`get_trend`, `get_products`, `get_reviews`). Two implementations 
 - **`MockDataProvider`** (default, `DATA_PROVIDER=mock`) — generates deterministic,
   realistic-looking trend/product/review data per category so every feature is
   demoable today without any external account.
-- **`RainforestProvider`** (`DATA_PROVIDER=rainforest`) — a real HTTP-call skeleton
-  against the Rainforest API (a paid third-party Amazon-data API), reading
-  `RAINFOREST_API_KEY` from the environment. It raises a clear error until a key is
-  configured; once you have one, filling in the response-mapping TODOs in that file
-  is the only work needed to go live.
+- **`RainforestProvider`** (`DATA_PROVIDER=rainforest`) — calls the real Rainforest
+  API (a paid third-party Amazon-data API; free 100-request trial available), reading
+  `RAINFOREST_API_KEY` from the environment. **Verified working end-to-end** against
+  a live trial key:
+  - `get_trend()` / `get_products()` share a single real `type=search` request per
+    category (cached per provider instance, so a full 7-category run costs ~7 API
+    credits, not ~14) and return real Amazon titles/prices/ratings/review counts.
+    `features` are heuristically extracted from listing titles (no bullet-point data
+    in search results without an extra per-ASIN `type=product` call); `growth` is
+    reported as `"Stable"` since a single point-in-time search has no historical
+    basis for a real trend direction (see "Real trend monitoring" below); `keywords`
+    are frequency-extracted from real listing titles.
+  - `get_reviews()` calls Rainforest's `type=reviews` endpoint, resolving the ASIN
+    from the same cached search results. **As of writing, this specific endpoint is
+    down on Rainforest's own end** (a confirmed, longstanding intermittent issue,
+    not particular to this integration) - every call currently returns a clean,
+    non-crashing `RuntimeError` (surfaced as an HTTP 503 by the API layer) rather
+    than silently falling back to fake data. `seed_data.py` isolates each product's
+    review fetch in its own try/except so one failure never aborts the rest of the
+    seed run. All network-level failures (timeouts, connection drops, non-2xx) are
+    normalized to the same `RuntimeError` contract in `_request()`.
 
 Every service (`trend_service.py`, `product_service.py`, etc.) talks only to the
 abstract interface via `provider_factory.get_data_provider()` — swapping providers

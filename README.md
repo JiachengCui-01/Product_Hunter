@@ -73,15 +73,26 @@ Visit `http://localhost:3000`. Backend API docs at `http://localhost:8000/docs`.
 analysis, opportunity generation) return a clean, non-crashing error until an
 `DEEPSEEK_API_KEY` is added.
 
-## Data sources today vs. tomorrow
+## Data sources: mock vs. real
 
 Furniture marketplaces (Amazon/Wayfair/Home Depot) have no free public API. The
-MVP ships with a `MarketDataProvider` abstraction:
-- **`MockDataProvider`** (default) — realistic, structured, deterministic mock
-  trend/product/review data per category. This is what powers the app today.
-- **`RainforestProvider`** (stubbed) — real HTTP-call skeleton for the paid
-  Rainforest API. Add `RAINFOREST_API_KEY` + set `DATA_PROVIDER=rainforest` once
-  you have a key; no other code changes needed. See `docs/ARCHITECTURE.md`.
+app ships with a `MarketDataProvider` abstraction, switched purely via env vars
+(`DATA_PROVIDER` in `backend/.env`) — no code changes either way:
+- **`MockDataProvider`** (`DATA_PROVIDER=mock`, the checked-in default) —
+  realistic, structured, deterministic mock data. Zero external dependencies.
+- **`RainforestProvider`** (`DATA_PROVIDER=rainforest`) — **real, verified
+  working** against the live Rainforest API (real Amazon search results) for
+  trends and products. Add `RAINFOREST_API_KEY` (a free 100-request trial is
+  available at [rainforestapi.com](https://app.rainforestapi.com/signup), no
+  card required) to activate it.
+  - ⚠️ Rainforest's `reviews` request type is currently down on their end
+    (a known, longstanding intermittent issue - confirmed independently, not
+    specific to this integration). Categories/trends/products still seed with
+    100% real data either way; only the automatic review-fetch fallback used
+    by "Generate Report" is affected until Rainforest's side recovers - real
+    reviews you submit yourself via the Review Insight page work regardless.
+
+See `docs/ARCHITECTURE.md` for the full design rationale.
 
 ## Documentation
 

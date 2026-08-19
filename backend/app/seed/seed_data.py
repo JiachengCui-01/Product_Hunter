@@ -3,10 +3,16 @@ Database seed script.
 
 Populates the database with:
     - all 7 categories (from fixtures/categories.json)
-    - one MarketTrend per category (via MockDataProvider)
-    - ~8 Products per category (via MockDataProvider) => ~56 products total
+    - one MarketTrend per category
+    - ~8 Products per category => ~56 products total
     - ~15 reviews each for the top 3 products per category by review_count
-      (via MockDataProvider) => ~315 reviews total
+      => ~315 reviews total
+
+Data source: whichever MarketDataProvider is active per DATA_PROVIDER in
+.env (see app.services.provider_factory) - "mock" (default, offline) or
+"rainforest" (real Amazon data). This script must go through the
+factory, not import a concrete provider directly, so it always reflects
+the same provider the running API server is using.
 
 Idempotent-ish: categories that already exist (matched by name) are
 skipped entirely (including their products/trends/reviews), so running
@@ -28,8 +34,8 @@ from app.models.category import Category
 from app.models.market_trend import MarketTrend
 from app.models.product import Product
 from app.models.review import Review
-from app.services.mock_data_provider import MockDataProvider
 from app.services.product_service import compute_opportunity_score
+from app.services.provider_factory import get_data_provider
 
 logger = get_logger(__name__)
 
@@ -54,7 +60,8 @@ def seed() -> None:
     create_all(engine)
 
     db = SessionLocal()
-    provider = MockDataProvider()
+    provider = get_data_provider()
+    logger.info("Seeding using data provider: %s", type(provider).__name__)
 
     summary = {
         "categories_created": [],
@@ -127,12 +134,24 @@ def seed() -> None:
             logger.info("Created %d products for category '%s'.", len(created_products), category.name)
 
             # --- Create ~15 reviews each for the top 3 products by review_count ---
+            # get_reviews() can raise RuntimeError - e.g. a live provider's
+            # reviews endpoint being temporarily down (observed happening
+            # with Rainforest's API) - which must not abort the whole
+            # multi-category seed run. Each product's fetch is isolated so
+            # one failure just skips that product's reviews and moves on.
             top_products = sorted(created_products, key=lambda p: p.review_count, reverse=True)[
                 :TOP_PRODUCTS_FOR_REVIEWS
             ]
             review_rows = []
             for product in top_products:
-                review_texts = provider.get_reviews(product.name, limit=REVIEWS_PER_TOP_PRODUCT)
+                try:
+                    review_texts = provider.get_reviews(product.name, limit=REVIEWS_PER_TOP_PRODUCT)
+                except RuntimeError as exc:
+                    logger.warning(
+                        "Skipping reviews for product '%s' (category '%s'): %s",
+                        product.name, category.name, exc,
+                    )
+                    continue
                 for text in review_texts:
                     review_rows.append(
                         Review(
