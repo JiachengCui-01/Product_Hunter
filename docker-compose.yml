@@ -1,0 +1,66 @@
+# docker-compose.yml
+#
+# OPT-IN production-like stack — NOT required for local MVP development.
+# The backend runs fine standalone against local SQLite (see backend/.env.example).
+# Use this file once you have Docker Desktop installed and want to run against a
+# real PostgreSQL instance (e.g. to prep for a real deployment, or to test the
+# Postgres code path before going live).
+#
+# Usage:
+#   docker compose up --build
+#
+# This starts:
+#   - postgres: a real Postgres 16 instance with a persistent named volume
+#   - backend:  the FastAPI app, pointed at postgres via DATABASE_URL
+#
+# The frontend is NOT included here — it's deployed to Vercel (see docs/SETUP.md)
+# or run locally via `npm run dev`, and only needs NEXT_PUBLIC_API_URL pointed at
+# wherever the backend container is exposed (http://localhost:8000 by default).
+
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: product_hunter
+      POSTGRES_USER: product_hunter
+      POSTGRES_PASSWORD: product_hunter_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U product_hunter"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # Switching DATABASE_URL from sqlite:/// to postgresql:// is the ONLY change
+      # needed — every model/service uses SQLAlchemy generic types for exactly
+      # this reason. See docs/ARCHITECTURE.md "SQLite -> PostgreSQL" section.
+      DATABASE_URL: postgresql://product_hunter:product_hunter_dev_password@postgres:5432/product_hunter
+      DATA_PROVIDER: mock
+      LLM_PROVIDER: anthropic
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      RAINFOREST_API_KEY: ${RAINFOREST_API_KEY:-}
+      CHROMA_PERSIST_DIR: /app/data/chroma
+      CORS_ORIGINS: http://localhost:3000
+    volumes:
+      - chroma_data:/app/data/chroma
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  chroma_data:

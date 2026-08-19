@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Neutral enterprise theme tokens.
+ * Kept as CSS custom properties so both Tailwind utilities (via tailwind.config.ts)
+ * and any hand-written CSS can reference the same palette, and so dark mode is a
+ * single class toggle away in the future.
+ */
+:root {
+  --background: #f8fafc; /* slate-50 — app canvas */
+  --foreground: #0f172a; /* slate-900 — primary text */
+  --surface: #ffffff; /* card/panel background */
+  --border: #e2e8f0; /* slate-200 — hairline borders */
+  --muted: #64748b; /* slate-500 — secondary text */
+}
+
+* {
+  border-color: var(--border);
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+}
+
+@layer components {
+  /* Consistent card padding used by ui/Card.tsx */
+  .p-card {
+    padding: 1.25rem;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

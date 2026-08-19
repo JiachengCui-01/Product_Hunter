@@ -1,0 +1,37 @@
+[
+  {
+    "name": "Living Room",
+    "description": "Furniture for shared social and relaxation spaces, including seating, storage, and media furniture such as sofas, sectionals, coffee tables, and TV consoles.",
+    "keywords": ["sofas", "sectionals", "coffee tables", "media consoles", "accent chairs"]
+  },
+  {
+    "name": "Bedroom",
+    "description": "Furniture for sleep and personal storage, including bed frames, dressers, nightstands, wardrobes, and vanities.",
+    "keywords": ["bed frames", "dressers", "nightstands", "wardrobes", "mattress storage"]
+  },
+  {
+    "name": "Kitchen",
+    "description": "Furniture for dining, food prep, and kitchen storage, including dining tables, kitchen islands, bar stools, and buffet cabinets.",
+    "keywords": ["dining tables", "kitchen islands", "bar stools", "buffet cabinets", "dining chairs"]
+  },
+  {
+    "name": "Home Office",
+    "description": "Furniture for remote and hybrid work setups, including desks, ergonomic office chairs, bookcases, and filing cabinets.",
+    "keywords": ["standing desks", "office chairs", "bookcases", "filing cabinets", "monitor stands"]
+  },
+  {
+    "name": "Laundry Room",
+    "description": "Furniture and organizational systems for washing, drying, and folding laundry, including hampers, utility carts, drying racks, and folding stations.",
+    "keywords": ["laundry hampers", "utility carts", "drying racks", "sorting bins", "folding tables"]
+  },
+  {
+    "name": "Entryway",
+    "description": "Furniture for entry and mudroom spaces, including benches, shoe racks, coat racks, and console tables that manage the daily flow in and out of the home.",
+    "keywords": ["entryway benches", "shoe racks", "coat racks", "console tables", "mudroom lockers"]
+  },
+  {
+    "name": "Outdoor",
+    "description": "Weather-resistant furniture for patios, decks, and gardens, including outdoor sofas, dining sets, fire pit tables, and lounge seating.",
+    "keywords": ["patio sofas", "outdoor dining sets", "fire pit tables", "adirondack chairs", "outdoor cushions"]
+  }
+]
