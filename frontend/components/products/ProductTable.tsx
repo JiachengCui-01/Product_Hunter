@@ -1,15 +1,19 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { Table, Thead, Tbody, Tr, Th, Td } from "@/components/ui/Table";
 import EmptyState from "@/components/ui/EmptyState";
 import OpportunityScoreCell from "@/components/products/OpportunityScoreCell";
+import ScoreBreakdownDetail from "@/components/products/ScoreBreakdownDetail";
 import { formatCurrency, formatNumber } from "@/lib/utils/formatters";
 import { Product, ProductSortField, SortOrder } from "@/lib/types/product";
+import { translateMaterial } from "@/lib/i18n/dictionaries";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export interface ProductTableProps {
   products: Product[];
+  /** Distinct empty state to show when filters produced zero rows. */
+  emptyVariant?: "noData" | "noMatch";
 }
 
 interface ColumnDef {
@@ -31,11 +35,19 @@ const COLUMNS: ColumnDef[] = [
  * Sortable product ranking table. Sorting is client-side over whatever the
  * server already returned (the page fetches with a default server-side sort,
  * this component lets the user re-sort by any column by clicking the header).
+ *
+ * Clicking the Demand or Opportunity score of a row expands an inline detail
+ * row showing that product's own score_breakdown substituted into the
+ * formula, without disturbing sort state.
  */
-export default function ProductTable({ products }: ProductTableProps): JSX.Element {
-  const { t } = useLanguage();
+export default function ProductTable({
+  products,
+  emptyVariant = "noData",
+}: ProductTableProps): JSX.Element {
+  const { t, locale } = useLanguage();
   const [sortField, setSortField] = useState<ProductSortField>("opportunity_score");
   const [order, setOrder] = useState<SortOrder>("desc");
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
   const sorted = useMemo(() => {
     const copy = [...products];
@@ -61,11 +73,17 @@ export default function ProductTable({ products }: ProductTableProps): JSX.Eleme
     }
   }
 
+  function toggleExpanded(id: number): void {
+    setExpandedId((prev) => (prev === id ? null : id));
+  }
+
   if (products.length === 0) {
     return (
       <EmptyState
-        title={t("products.emptyTitle")}
-        description={t("products.emptyDescription")}
+        title={t(emptyVariant === "noMatch" ? "products.noMatchTitle" : "products.emptyTitle")}
+        description={t(
+          emptyVariant === "noMatch" ? "products.noMatchDescription" : "products.emptyDescription"
+        )}
       />
     );
   }
@@ -93,27 +111,69 @@ export default function ProductTable({ products }: ProductTableProps): JSX.Eleme
         </Tr>
       </Thead>
       <Tbody>
-        {sorted.map((product) => (
-          <Tr key={product.id}>
-            <Td>
-              <div className="font-medium text-foreground">{product.name}</div>
-              {product.features.length > 0 && (
-                <div className="mt-0.5 line-clamp-1 text-xs text-muted">
-                  {product.features.join(" · ")}
-                </div>
+        {sorted.map((product) => {
+          const expanded = expandedId === product.id;
+          return (
+            <Fragment key={product.id}>
+              <Tr>
+                <Td>
+                  <div className="font-medium text-foreground">{product.name}</div>
+                  {product.features.length > 0 && (
+                    <div className="mt-0.5 line-clamp-1 text-xs text-muted">
+                      {product.features.join(" · ")}
+                    </div>
+                  )}
+                  {product.material.length > 0 && (
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {product.material.map((m) => (
+                        <span
+                          key={m}
+                          className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600"
+                        >
+                          {translateMaterial(m, locale)}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </Td>
+                <Td className="text-right tabular-nums">{formatCurrency(product.price)}</Td>
+                <Td className="text-right tabular-nums">{product.rating.toFixed(1)}</Td>
+                <Td className="text-right tabular-nums">{formatNumber(product.review_count)}</Td>
+                <Td className="text-right">
+                  <button
+                    type="button"
+                    onClick={() => toggleExpanded(product.id)}
+                    aria-expanded={expanded}
+                    aria-controls={`score-breakdown-${product.id}`}
+                    title={t("products.scoreBreakdownToggleLabel")}
+                    className="rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  >
+                    <OpportunityScoreCell score={product.demand_score} />
+                  </button>
+                </Td>
+                <Td className="text-right">
+                  <button
+                    type="button"
+                    onClick={() => toggleExpanded(product.id)}
+                    aria-expanded={expanded}
+                    aria-controls={`score-breakdown-${product.id}`}
+                    title={t("products.scoreBreakdownToggleLabel")}
+                    className="rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  >
+                    <OpportunityScoreCell score={product.opportunity_score} />
+                  </button>
+                </Td>
+              </Tr>
+              {expanded && (
+                <Tr id={`score-breakdown-${product.id}`}>
+                  <Td colSpan={COLUMNS.length} className="bg-slate-50/70">
+                    <ScoreBreakdownDetail product={product} />
+                  </Td>
+                </Tr>
               )}
-            </Td>
-            <Td className="text-right tabular-nums">{formatCurrency(product.price)}</Td>
-            <Td className="text-right tabular-nums">{product.rating.toFixed(1)}</Td>
-            <Td className="text-right tabular-nums">{formatNumber(product.review_count)}</Td>
-            <Td className="text-right">
-              <OpportunityScoreCell score={product.demand_score} />
-            </Td>
-            <Td className="text-right">
-              <OpportunityScoreCell score={product.opportunity_score} />
-            </Td>
-          </Tr>
-        ))}
+            </Fragment>
+          );
+        })}
       </Tbody>
     </Table>
   );

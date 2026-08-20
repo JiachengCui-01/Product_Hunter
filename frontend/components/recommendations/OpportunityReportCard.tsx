@@ -1,6 +1,8 @@
 "use client";
 
+import { KeyboardEvent } from "react";
 import Card from "@/components/ui/Card";
+import ExternalLinkIcon from "@/components/ui/ExternalLinkIcon";
 import { formatDate } from "@/lib/utils/formatters";
 import { OpportunityReport } from "@/lib/types/opportunity";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -18,11 +20,24 @@ export default function OpportunityReportCard({
   active = false,
 }: OpportunityReportCardProps): JSX.Element {
   const { t } = useLanguage();
+  const [firstSource, ...restSources] = report.source_products;
+
+  function handleKeyDown(e: KeyboardEvent<HTMLDivElement>): void {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onClick?.(report);
+    }
+  }
+
   return (
-    <button
-      type="button"
+    // A plain <button> can't legally contain the nested <a> in the source-product
+    // hint below, so this uses a keyboard-accessible div-as-button instead.
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => onClick?.(report)}
-      className="block w-full text-left"
+      onKeyDown={handleKeyDown}
+      className="block w-full cursor-pointer text-left"
     >
       <Card
         className={`flex flex-col gap-2 transition-colors ${
@@ -41,7 +56,27 @@ export default function OpportunityReportCard({
         <p className="text-xs font-medium text-muted">
           {t("recommendations.targetLabel")} <span className="text-foreground">{report.target_customer}</span>
         </p>
+        {firstSource && (
+          <div className="flex items-center gap-1.5 text-xs text-muted">
+            {firstSource.url ? (
+              <a
+                href={firstSource.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={t("recommendations.externalLinkLabel")}
+                onClick={(e) => e.stopPropagation()}
+                className="inline-flex min-w-0 items-center gap-1 truncate text-accent hover:underline"
+              >
+                <span className="truncate">{firstSource.name}</span>
+                <ExternalLinkIcon className="h-3 w-3 shrink-0" />
+              </a>
+            ) : (
+              <span className="truncate">{firstSource.name}</span>
+            )}
+            {restSources.length > 0 && <span className="shrink-0">+{restSources.length}</span>}
+          </div>
+        )}
       </Card>
-    </button>
+    </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
+import ExternalLinkIcon from "@/components/ui/ExternalLinkIcon";
 import { formatDate } from "@/lib/utils/formatters";
 import { OpportunityReport } from "@/lib/types/opportunity";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
@@ -90,6 +91,31 @@ export default function OpportunityReportDetail({
           </ul>
         )}
       </Section>
+
+      {report.source_products.length > 0 && (
+        <Section title={t("recommendations.sourceProductsHeading")}>
+          <ul className="space-y-1.5 text-sm">
+            {report.source_products.map((sp, i) => (
+              <li key={i}>
+                {sp.url ? (
+                  <a
+                    href={sp.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    title={t("recommendations.externalLinkLabel")}
+                    className="inline-flex items-center gap-1 text-accent hover:underline"
+                  >
+                    {sp.name}
+                    <ExternalLinkIcon />
+                  </a>
+                ) : (
+                  <span className="text-foreground">{sp.name}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
     </Card>
   );
 }

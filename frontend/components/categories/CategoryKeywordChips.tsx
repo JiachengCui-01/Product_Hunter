@@ -1,5 +1,6 @@
 "use client";
 
+import { translateCategoryKeyword } from "@/lib/i18n/dictionaries";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export interface CategoryKeywordChipsProps {
@@ -13,7 +14,7 @@ export default function CategoryKeywordChips({
   keywords,
   limit,
 }: CategoryKeywordChipsProps): JSX.Element {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
 
   if (keywords.length === 0) {
     return <span className="text-xs text-muted">{t("categoryKeywordChips.none")}</span>;
@@ -29,7 +30,7 @@ export default function CategoryKeywordChips({
           key={kw}
           className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600"
         >
-          {kw}
+          {translateCategoryKeyword(kw, locale)}
         </span>
       ))}
       {remaining > 0 && (

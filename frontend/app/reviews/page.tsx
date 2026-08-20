@@ -18,7 +18,7 @@ import { useLanguage } from "@/lib/i18n/LanguageContext";
  * No fetch-on-mount here — everything is driven by the form submission.
  */
 export default function ReviewsPage(): JSX.Element {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [result, setResult] = useState<ReviewAnalysisResult | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,6 +30,7 @@ export default function ReviewsPage(): JSX.Element {
     try {
       const analysis = await analyzeReviews({
         reviews: reviews.map((review) => ({ review })),
+        language: locale,
       });
       setResult(analysis);
     } catch (err) {

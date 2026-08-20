@@ -13,11 +13,12 @@ import { generateOpportunity, getOpportunities } from "@/lib/api/opportunities";
 import { ApiError } from "@/lib/api/client";
 import { Category } from "@/lib/types/category";
 import { OpportunityReport } from "@/lib/types/opportunity";
+import { translateCategory } from "@/lib/i18n/dictionaries";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 /** Isolated so useSearchParams() doesn't force a CSR bailout at the page level. */
 function RecommendationsContent(): JSX.Element {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const searchParams = useSearchParams();
   const initialCategoryId = searchParams.get("category_id") ?? "";
 
@@ -75,7 +76,10 @@ function RecommendationsContent(): JSX.Element {
     setGenerating(true);
     setGenerateError(null);
     try {
-      const report = await generateOpportunity({ category_id: Number(selectedId) });
+      const report = await generateOpportunity({
+        category_id: Number(selectedId),
+        language: locale,
+      });
       setReports((prev) => [report, ...prev]);
       setSelectedReport(report);
     } catch (err) {
@@ -110,7 +114,7 @@ function RecommendationsContent(): JSX.Element {
           {categories.length === 0 && <option value="">{t("recommendations.noCategoriesOption")}</option>}
           {categories.map((cat) => (
             <option key={cat.id} value={cat.id}>
-              {cat.name}
+              {translateCategory(cat.name, locale)}
             </option>
           ))}
         </select>

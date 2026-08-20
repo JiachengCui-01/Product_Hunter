@@ -13,4 +13,6 @@ export interface ReviewAnalysisResult {
 /** Payload for POST /api/analysis/reviews */
 export interface AnalyzeReviewsPayload {
   reviews: { review: string }[];
+  /** Language for the backend to generate the analysis text in. */
+  language?: "en" | "zh";
 }

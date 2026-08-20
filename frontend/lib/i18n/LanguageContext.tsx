@@ -47,18 +47,33 @@ export function LanguageProvider({ children }: { children: ReactNode }): JSX.Ele
     }
   }, []);
 
-  // Keep <html lang> and localStorage in sync whenever the locale changes.
+  // Mirror the locale onto <html lang> for a11y/SEO. Read-only side effect —
+  // deliberately does NOT persist here (see setLocale below).
   useEffect(() => {
     document.documentElement.lang = locale;
+  }, [locale]);
+
+  // Persistence happens ONLY on an explicit user change, never in an effect
+  // keyed on `locale`.
+  //
+  // An earlier version wrote localStorage from a [locale] effect, which
+  // silently broke persistence: on mount that effect fires while `locale` is
+  // still the pre-hydration default ("en", required to match the server
+  // render), overwriting a stored "zh" before the hydrate effect's state
+  // update is committed. React 18 StrictMode's double-invoked effects then
+  // made the clobber stick, because the second hydrate read the value the
+  // first sync had just overwritten. Net result: choosing 中文 and reloading
+  // put you back in English.
+  //
+  // Writing only in response to the user's action removes that whole class of
+  // ordering bug - the default value is never a thing we persist.
+  const setLocale = useCallback((next: Locale) => {
+    setLocaleState(next);
     try {
-      window.localStorage.setItem(STORAGE_KEY, locale);
+      window.localStorage.setItem(STORAGE_KEY, next);
     } catch {
       // Ignore write failures (e.g. storage disabled) — in-memory state still works.
     }
-  }, [locale]);
-
-  const setLocale = useCallback((next: Locale) => {
-    setLocaleState(next);
   }, []);
 
   const t = useCallback(

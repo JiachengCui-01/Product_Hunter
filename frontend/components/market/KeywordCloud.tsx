@@ -1,6 +1,7 @@
 "use client";
 
 import EmptyState from "@/components/ui/EmptyState";
+import { translateKeyword } from "@/lib/i18n/dictionaries";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export interface KeywordCloudProps {
@@ -11,9 +12,13 @@ export interface KeywordCloudProps {
  * Simple keyword cloud. Order is treated as descending relevance so the
  * first keywords render slightly larger/bolder for a lightweight "cloud" feel
  * without pulling in a charting dependency.
+ *
+ * These keywords are mined from real Amazon titles, so in `zh` locale each
+ * renders as "中文 (English)" via translateKeyword — Chinese for
+ * readability, English preserved as the actual searchable marketplace term.
  */
 export default function KeywordCloud({ keywords }: KeywordCloudProps): JSX.Element {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
 
   if (keywords.length === 0) {
     return <EmptyState title={t("market.keywordCloudEmpty")} />;
@@ -28,7 +33,7 @@ export default function KeywordCloud({ keywords }: KeywordCloudProps): JSX.Eleme
             key={kw}
             className={`rounded-full bg-accent-light px-3 py-1 text-accent ${weight}`}
           >
-            {kw}
+            {translateKeyword(kw, locale)}
           </span>
         );
       })}

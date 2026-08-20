@@ -11,6 +11,7 @@ import { getDashboardSummary } from "@/lib/api/dashboard";
 import { ApiError } from "@/lib/api/client";
 import { DashboardSummary } from "@/lib/types/dashboard";
 import { formatNumber } from "@/lib/utils/formatters";
+import { translateCategory } from "@/lib/i18n/dictionaries";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 /**
@@ -18,7 +19,7 @@ import { useLanguage } from "@/lib/i18n/LanguageContext";
  * currently trending categories, sourced from GET /api/dashboard/summary.
  */
 export default function DashboardPage(): JSX.Element {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -85,7 +86,7 @@ export default function DashboardPage(): JSX.Element {
             />
             <StatCard
               label={t("dashboard.statTopCategory")}
-              value={topCategory ? topCategory.name : "—"}
+              value={topCategory ? translateCategory(topCategory.name, locale) : "—"}
               hint={
                 topCategory
                   ? `${t("dashboard.scoreLabel")} ${topCategory.trend_score}`

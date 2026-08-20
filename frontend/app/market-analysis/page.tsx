@@ -14,6 +14,7 @@ import { getTrend } from "@/lib/api/trends";
 import { ApiError } from "@/lib/api/client";
 import { Category } from "@/lib/types/category";
 import { MarketTrend } from "@/lib/types/trend";
+import { translateCategory } from "@/lib/i18n/dictionaries";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 /**
@@ -22,7 +23,7 @@ import { useLanguage } from "@/lib/i18n/LanguageContext";
  * to bail out of static optimization at build time.
  */
 function MarketAnalysisContent(): JSX.Element {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const searchParams = useSearchParams();
   const initialCategoryId = searchParams.get("category_id");
 
@@ -115,7 +116,7 @@ function MarketAnalysisContent(): JSX.Element {
           >
             {categories.map((cat) => (
               <option key={cat.id} value={cat.id}>
-                {cat.name}
+                {translateCategory(cat.name, locale)}
               </option>
             ))}
           </select>
@@ -138,7 +139,9 @@ function MarketAnalysisContent(): JSX.Element {
         <div className="space-y-4">
           <Card className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground">{trend.category_name}</h3>
+              <h3 className="text-sm font-semibold text-foreground">
+                {translateCategory(trend.category_name, locale)}
+              </h3>
               <GrowthBadge growth={trend.growth} />
             </div>
             <TrendScoreGauge score={trend.trend_score} />

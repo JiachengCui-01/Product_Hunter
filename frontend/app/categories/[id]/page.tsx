@@ -12,6 +12,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import { getCategory } from "@/lib/api/categories";
 import { ApiError } from "@/lib/api/client";
 import { Category } from "@/lib/types/category";
+import { translateCategory, translateCategoryDescription } from "@/lib/i18n/dictionaries";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 /**
@@ -21,7 +22,7 @@ import { useLanguage } from "@/lib/i18n/LanguageContext";
 export default function CategoryDetailPage(): JSX.Element {
   const params = useParams<{ id: string }>();
   const categoryId = params?.id;
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
 
   const [category, setCategory] = useState<Category | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -55,7 +56,9 @@ export default function CategoryDetailPage(): JSX.Element {
   }, [categoryId]);
 
   return (
-    <PageContainer heading={category?.name ?? t("categoryDetail.heading")}>
+    <PageContainer
+      heading={category ? translateCategory(category.name, locale) : t("categoryDetail.heading")}
+    >
       {loading && (
         <Card className="space-y-3">
           <Skeleton className="h-5 w-1/3" />
@@ -79,7 +82,7 @@ export default function CategoryDetailPage(): JSX.Element {
         <div className="space-y-6">
           <Card className="space-y-4">
             <p className="text-sm leading-relaxed text-foreground">
-              {category.description}
+              {translateCategoryDescription(category.name, locale, category.description)}
             </p>
             <div>
               <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">

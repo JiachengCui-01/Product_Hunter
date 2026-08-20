@@ -6,6 +6,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import GrowthBadge from "@/components/market/GrowthBadge";
 import { formatScore } from "@/lib/utils/formatters";
 import { TrendingCategorySummary } from "@/lib/types/dashboard";
+import { translateCategory } from "@/lib/i18n/dictionaries";
 import { useLanguage } from "@/lib/i18n/LanguageContext";
 
 export interface TrendingCategoriesListProps {
@@ -16,7 +17,7 @@ export interface TrendingCategoriesListProps {
 export default function TrendingCategoriesList({
   categories,
 }: TrendingCategoriesListProps): JSX.Element {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
 
   if (categories.length === 0) {
     return (
@@ -41,7 +42,7 @@ export default function TrendingCategoriesList({
                   {i + 1}
                 </span>
                 <span className="truncate text-sm font-medium text-foreground">
-                  {cat.name}
+                  {translateCategory(cat.name, locale)}
                 </span>
               </div>
               <div className="flex shrink-0 items-center gap-3">
