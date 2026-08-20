@@ -190,8 +190,19 @@ def fetch_prefix(source: str, megabytes: int, use_cache: bool = True) -> list[di
 
 
 def clean_text(value: str) -> str:
-    """Unescape HTML entities and collapse whitespace/line breaks."""
+    """
+    Normalize raw dataset review text into clean prose.
+
+    The dataset carries several artifacts that would otherwise be fed
+    straight to the LLM: HTML entities (`&#34;`), literal HTML tags
+    (`<br />`), and embedded media placeholders
+    (`[[VIDEOID:62a249818be47b2adae844dd44cd9c71]]`). Order matters -
+    entities are unescaped first so that an escaped tag becomes a real
+    tag and is then stripped by the tag pass.
+    """
     text = html.unescape(value or "")
+    text = re.sub(r"\[\[[A-Z]+:[^\]]*\]\]", " ", text)  # [[VIDEOID:...]], [[IMAGEID:...]]
+    text = re.sub(r"<[^>]{1,20}>", " ", text)           # <br />, <b>, </i>, ...
     return re.sub(r"\s+", " ", text).strip()
 
 
