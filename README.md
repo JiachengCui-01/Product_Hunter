@@ -68,10 +68,10 @@ npm run dev
 ```
 Visit `http://localhost:3000`. Backend API docs at `http://localhost:8000/docs`.
 
-**Verified working end-to-end**: backend seeded with 7 categories / 56 products /
-315 reviews, all non-AI pages render live data; the two AI endpoints (review
-analysis, opportunity generation) return a clean, non-crashing error until an
-`DEEPSEEK_API_KEY` is added.
+**Verified working end-to-end**: backend seeded with 7 categories / 56 real
+products / 280 real reviews; all pages render live data. The two AI endpoints
+(review analysis, opportunity generation) return a clean, non-crashing error
+until `DEEPSEEK_API_KEY` is set.
 
 ## Data sources: mock vs. real
 
@@ -86,11 +86,21 @@ app ships with a `MarketDataProvider` abstraction, switched purely via env vars
   available at [rainforestapi.com](https://app.rainforestapi.com/signup), no
   card required) to activate it.
   - ⚠️ Rainforest's `reviews` request type is currently down on their end
-    (a known, longstanding intermittent issue - confirmed independently, not
-    specific to this integration). Categories/trends/products still seed with
-    100% real data either way; only the automatic review-fetch fallback used
-    by "Generate Report" is affected until Rainforest's side recovers - real
-    reviews you submit yourself via the Review Insight page work regardless.
+    (a known, longstanding issue - confirmed independently, not specific to
+    this integration). Trends and products still come back 100% real; review
+    text is covered by the free dataset below instead.
+
+- **Real reviews, free** — genuine Amazon customer reviews ship with the repo
+  (`backend/app/seed/fixtures/reviews/`, 545 reviews across the 7 categories),
+  sourced from the [Amazon Reviews'23](https://amazon-reviews-2023.github.io/)
+  academic dataset by `backend/scripts/build_review_fixtures.py`. Review text
+  is the one input that is expensive to buy live but barely
+  freshness-sensitive — a complaint that a dresser arrives with its drawer
+  rails backwards is just as actionable a year later — so this costs nothing
+  and needs no API key. Used automatically when the live provider cannot
+  supply reviews.
+  (License note: academic dataset with no explicit license on its dataset
+  card — fine for development; verify terms before commercial use.)
 
 See `docs/ARCHITECTURE.md` for the full design rationale.
 

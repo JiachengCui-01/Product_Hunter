@@ -34,6 +34,7 @@ from app.models.category import Category
 from app.models.market_trend import MarketTrend
 from app.models.product import Product
 from app.models.review import Review
+from app.services import review_fixtures
 from app.services.product_service import compute_opportunity_score
 from app.services.provider_factory import get_data_provider
 
@@ -44,6 +45,9 @@ FIXTURES_PATH = Path(__file__).resolve().parent / "fixtures" / "categories.json"
 PRODUCTS_PER_CATEGORY = 8
 TOP_PRODUCTS_FOR_REVIEWS = 3
 REVIEWS_PER_TOP_PRODUCT = 15
+# How many real dataset reviews to attach per category when the live
+# provider cannot supply any (see review_fixtures).
+FIXTURE_REVIEWS_PER_CATEGORY = 40
 
 
 def load_category_fixtures() -> list[dict]:
@@ -69,6 +73,7 @@ def seed() -> None:
         "products_created": 0,
         "trends_created": 0,
         "reviews_created": 0,
+        "categories_using_fixture_reviews": [],
     }
 
     try:
@@ -133,7 +138,7 @@ def seed() -> None:
             summary["products_created"] += len(created_products)
             logger.info("Created %d products for category '%s'.", len(created_products), category.name)
 
-            # --- Create ~15 reviews each for the top 3 products by review_count ---
+            # --- Reviews for the top 3 products by review_count ---
             # get_reviews() can raise RuntimeError - e.g. a live provider's
             # reviews endpoint being temporarily down (observed happening
             # with Rainforest's API) - which must not abort the whole
@@ -143,15 +148,17 @@ def seed() -> None:
                 :TOP_PRODUCTS_FOR_REVIEWS
             ]
             review_rows = []
+            provider_review_count = 0
             for product in top_products:
                 try:
                     review_texts = provider.get_reviews(product.name, limit=REVIEWS_PER_TOP_PRODUCT)
                 except RuntimeError as exc:
                     logger.warning(
-                        "Skipping reviews for product '%s' (category '%s'): %s",
+                        "Skipping provider reviews for product '%s' (category '%s'): %s",
                         product.name, category.name, exc,
                     )
                     continue
+                provider_review_count += len(review_texts)
                 for text in review_texts:
                     review_rows.append(
                         Review(
@@ -160,6 +167,36 @@ def seed() -> None:
                             review_text=text,
                         )
                     )
+
+            # Fall back to the committed real-review fixtures (free Amazon
+            # Reviews'23 dataset) when the provider yielded nothing. These
+            # are genuine customer reviews, so the review-analysis and
+            # opportunity-generation features work with real language
+            # instead of being dead - see services/review_fixtures.py.
+            # They are attached at category level (no product_id), since
+            # they are real reviews of comparable products in the category
+            # rather than of these specific listings; claiming otherwise
+            # by pinning them to a product_id would be misleading.
+            if provider_review_count == 0:
+                fixture_records = review_fixtures.get_review_records(
+                    category.name, limit=FIXTURE_REVIEWS_PER_CATEGORY
+                )
+                for record in fixture_records:
+                    review_rows.append(
+                        Review(
+                            product_id=None,
+                            category_id=category.id,
+                            review_text=record["review"],
+                        )
+                    )
+                if fixture_records:
+                    logger.info(
+                        "Using %d real dataset reviews for category '%s' "
+                        "(provider returned none).",
+                        len(fixture_records), category.name,
+                    )
+                    summary["categories_using_fixture_reviews"].append(category.name)
+
             db.add_all(review_rows)
             db.commit()
             summary["reviews_created"] += len(review_rows)
@@ -182,6 +219,9 @@ def seed() -> None:
     print(f"Market trends created : {summary['trends_created']}")
     print(f"Products created      : {summary['products_created']}")
     print(f"Reviews created       : {summary['reviews_created']}")
+    fixture_cats = summary["categories_using_fixture_reviews"]
+    if fixture_cats:
+        print(f"  (real dataset reviews used for: {', '.join(fixture_cats)})")
     print("=" * 60 + "\n")
 
 

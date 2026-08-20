@@ -34,7 +34,8 @@ everything else works without it). To use Anthropic Claude instead, set
 `RAINFOREST_API_KEY` blank until you have one; `DATA_PROVIDER` stays `mock`
 until then.
 
-Seed the database with realistic mock data (7 categories, ~56 products, ~300+ reviews):
+Seed the database (7 categories, ~56 products, ~280 reviews - real or mock
+depending on `DATA_PROVIDER`):
 ```powershell
 .venv\Scripts\python -m app.seed.seed_data
 ```
@@ -79,11 +80,19 @@ Rainforest API - no code changes needed, just:
    categories/trends/products.
 
 Known limitation: Rainforest's `type=reviews` endpoint is currently down on
-their end (confirmed independently, not specific to this integration) - real
-review data won't populate until that recovers on their side. Everything else
-(trends, products, opportunity scoring) uses fully real data today. Reviews
-you submit yourself via the Review Insight page work regardless, since that
-path never calls the provider.
+their end (confirmed independently, not specific to this integration). This no
+longer breaks anything - the app automatically falls back to the 545 real
+Amazon reviews committed under `backend/app/seed/fixtures/reviews/` (free
+Amazon Reviews'23 dataset; see `docs/ARCHITECTURE.md`). Trends and products
+come from the live API; review text comes from the dataset. Reviews you paste
+into the Review Insight page take priority over both.
+
+To regenerate or expand the review fixtures:
+```powershell
+.venv\Scripts\python.exe scripts\build_review_fixtures.py --mb 60 --per-category 80
+```
+Downloads are cached under `backend/scripts/.cache/` (gitignored), so re-running
+with different filters does not re-download.
 
 For production (Render), set the same two env vars in the Render dashboard
 (see step 5a below) instead of `backend/.env`.

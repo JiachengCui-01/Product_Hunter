@@ -78,6 +78,37 @@ three methods (`get_trend`, `get_products`, `get_reviews`). Two implementations 
     seed run. All network-level failures (timeouts, connection drops, non-2xx) are
     normalized to the same `RuntimeError` contract in `_request()`.
 
+### Review text: a free static dataset, deliberately
+Review text is treated as a separate concern from price/rank data, because its
+cost profile is different: paid APIs bill per product for it, yet it is barely
+freshness-sensitive (a complaint that a dresser's drawer rails arrive backwards
+is just as actionable a year later). So instead of buying it, the repo ships
+545 genuine Amazon reviews across the 7 categories in
+`backend/app/seed/fixtures/reviews/`, extracted from the free
+[Amazon Reviews'23](https://amazon-reviews-2023.github.io/) academic dataset by
+the build-time script `backend/scripts/build_review_fixtures.py`.
+
+That script range-downloads only a prefix of each multi-GB source department
+file (Home_and_Kitchen, Office_Products, Patio_Lawn_and_Garden - the app's
+categories do not all live under one Amazon department), then applies keyword
+matching per category plus an unconditional accessory blocklist. The blocklist
+matters: naive matching pulled in reviews of sofa *covers* and printer ink
+cartridges, whose pain points are useless for furniture development.
+
+`services/review_fixtures.py` reads those fixtures at runtime and is used as a
+fallback in two places - the seed script (when the live provider returns no
+reviews) and `opportunity_service._gather_review_texts` (when the provider
+raises). Reviews are stored with `product_id=None` and only a `category_id`,
+because they are real reviews of *comparable* products in the category, not of
+the specific scraped listings - pinning them to a product would overstate what
+the data is.
+
+Precision is good but not perfect (roughly 70-90% on-topic by inspection);
+keyword heuristics hit diminishing returns, and the fixtures are a large
+improvement over synthetic templates either way. License caveat: the source is
+an academic dataset with no explicit license on its card - suitable for
+development and evaluation, verify terms before commercial use.
+
 Every service (`trend_service.py`, `product_service.py`, etc.) talks only to the
 abstract interface via `provider_factory.get_data_provider()` — swapping providers
 never touches API or service code.

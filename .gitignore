@@ -22,3 +22,6 @@ data/chroma/
 Thumbs.db
 .vscode/
 .idea/
+
+# Build-script download cache (scratch, re-downloadable)
+backend/scripts/.cache/

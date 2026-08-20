@@ -11,9 +11,11 @@ Pipeline (see generate_opportunity):
     2. Obtain a ReviewAnalysis to ground the recommendation:
          - If real reviews exist in the DB for this product/category, run
            the agent's sentiment analysis over those.
-         - Otherwise, fall back to mock reviews from the active data
-           provider (so the pipeline works even for a brand new category
-           with no submitted reviews yet).
+         - Otherwise, ask the active data provider (so the pipeline works
+           even for a brand new category with no submitted reviews yet).
+         - If the provider cannot supply reviews at all (e.g. a live API's
+           reviews endpoint is down), fall back to the committed
+           real-review fixtures for the category.
     3. Query the RAG vector store (app.ai.rag) for similar prior reports,
        to nudge the LLM toward a differentiated recommendation.
     4. Call the agent's recommend_product() tool.
@@ -32,6 +34,7 @@ from app.models.opportunity_report import OpportunityReport
 from app.models.product import Product
 from app.models.review import Review
 from app.schemas.opportunity_report import OpportunityReportRead
+from app.services import review_fixtures
 from app.services.provider_factory import get_data_provider
 from app.services.trend_service import get_trend_for_category
 
@@ -72,7 +75,27 @@ def _gather_review_texts(db: Session, category: Category, product_id: int | None
         representative = db.query(Product).filter(Product.category_id == category.id).first()
         product_name = representative.name if representative is not None else category.name
 
-    return provider.get_reviews(product_name, limit=15)
+    try:
+        return provider.get_reviews(product_name, limit=15)
+    except RuntimeError as exc:
+        # A live provider can be unable to supply reviews at all - Rainforest's
+        # `type=reviews` endpoint has been returning 503 for an extended
+        # period. Rather than failing the whole report (which left "Generate
+        # Report" dead in production), fall back to the committed real-review
+        # fixtures for this category. These are genuine customer reviews of
+        # comparable products, so the recommendation stays grounded in real
+        # language - see services/review_fixtures.py.
+        fallback = review_fixtures.get_reviews(category.name, limit=25)
+        if fallback:
+            logger.warning(
+                "Provider reviews unavailable for category '%s' (%s) - using "
+                "%d real dataset reviews instead.",
+                category.name, exc, len(fallback),
+            )
+            return fallback
+        # No fixtures for this category either: re-raise so the API surfaces
+        # a clear 503 rather than silently generating an ungrounded report.
+        raise
 
 
 def generate_opportunity(
