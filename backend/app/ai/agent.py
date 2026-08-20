@@ -131,7 +131,7 @@ class FurnitureInsightAgent:
     # Public tools
     # ------------------------------------------------------------------
 
-    def analyze_market(self, category, trend_data: dict) -> dict:
+    def analyze_market(self, category, trend_data: dict, language: str = "en") -> dict:
         """
         Analyze a category's market trend data and return a summary dict.
 
@@ -150,10 +150,11 @@ class FurnitureInsightAgent:
             trend_score=trend_data.get("trend_score", 0.0),
             growth=trend_data.get("growth", "Stable"),
             keywords=trend_data.get("keywords", []),
+            language=language,
         )
         return self._call_llm_json(MARKET_ANALYSIS_SYSTEM, prompt)
 
-    def analyze_reviews(self, reviews: list[str]) -> dict:
+    def analyze_reviews(self, reviews: list[str], language: str = "en") -> dict:
         """
         Run aspect-based sentiment analysis over a batch of raw review
         strings.
@@ -162,7 +163,7 @@ class FurnitureInsightAgent:
             dict shaped like ReviewAnalysisResponse:
             {"positive": [...], "negative": [...], "pain_points": [...]}
         """
-        prompt = review_analysis_prompt(reviews)
+        prompt = review_analysis_prompt(reviews, language=language)
         result = self._call_llm_json(REVIEW_ANALYSIS_SYSTEM, prompt)
         # Defensively normalize shape in case the model omits a key.
         return {
@@ -177,6 +178,7 @@ class FurnitureInsightAgent:
         trend_data: dict,
         review_analysis: dict,
         similar_reports: list[dict] | None = None,
+        language: str = "en",
     ) -> dict:
         """
         Generate a full new-product opportunity recommendation.
@@ -203,6 +205,7 @@ class FurnitureInsightAgent:
             pain_points=review_analysis.get("pain_points", []),
             positive_aspects=review_analysis.get("positive", []),
             similar_reports=similar_reports,
+            language=language,
         )
         result = self._call_llm_json(OPPORTUNITY_REPORT_SYSTEM, prompt)
         return {

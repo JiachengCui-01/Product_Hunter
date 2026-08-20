@@ -98,8 +98,38 @@ def _gather_review_texts(db: Session, category: Category, product_id: int | None
         raise
 
 
+# How many of the category's top-ranked real listings to record on a
+# generated report as its source products.
+_SOURCE_PRODUCT_LIMIT = 5
+
+
+def _collect_source_products(db: Session, category_id: int, product_id: int | None) -> list[dict]:
+    """
+    Snapshot the real marketplace listings this report is based on, so the
+    UI can link back to them and the reader can audit where the analysis
+    came from.
+
+    Products with no `url` (i.e. provider-synthesized mock products, which
+    have no real listing) are excluded rather than listed link-less: a
+    "source" the reader cannot verify is not a useful citation.
+    """
+    query = db.query(Product).filter(Product.category_id == category_id)
+    if product_id is not None:
+        query = query.filter(Product.id == product_id)
+
+    rows = query.order_by(Product.opportunity_score.desc()).limit(_SOURCE_PRODUCT_LIMIT).all()
+    return [
+        {"name": p.name, "asin": p.asin, "url": p.url}
+        for p in rows
+        if p.url
+    ]
+
+
 def generate_opportunity(
-    db: Session, category_id: int, product_id: int | None = None
+    db: Session,
+    category_id: int,
+    product_id: int | None = None,
+    language: str = "en",
 ) -> OpportunityReportRead | None:
     """
     Run the full opportunity-generation pipeline for a category (and
@@ -110,7 +140,7 @@ def generate_opportunity(
         (lets the router translate that into an HTTP 404).
 
     Raises:
-        RuntimeError: if ANTHROPIC_API_KEY is not configured (propagated
+        RuntimeError: if the configured LLM provider's API key is missing (propagated
             from the LLM client) - intentional, so the API layer returns
             a clear error rather than fabricating a fake report.
         app.ai.agent.AgentParseError: if the LLM's JSON output can't be
@@ -133,7 +163,7 @@ def generate_opportunity(
 
     # Step 2: review analysis (real reviews if we have enough, else mock).
     review_texts = _gather_review_texts(db, category, product_id)
-    review_analysis = agent.analyze_reviews(reviews=review_texts)
+    review_analysis = agent.analyze_reviews(reviews=review_texts, language=language)
 
     # Step 3: RAG enrichment - find similar prior reports (best-effort;
     # query_similar() never raises, it returns [] on any failure).
@@ -146,6 +176,7 @@ def generate_opportunity(
         trend_data=trend_data,
         review_analysis=review_analysis,
         similar_reports=similar_reports,
+        language=language,
     )
 
     # Step 5: persist.
@@ -157,6 +188,8 @@ def generate_opportunity(
         solution=recommendation["solution"],
         features=recommendation["features"],
         selling_points=recommendation["selling_points"],
+        language=language,
+        source_products=_collect_source_products(db, category_id, product_id),
     )
     db.add(report)
     db.commit()

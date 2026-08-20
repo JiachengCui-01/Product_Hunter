@@ -62,7 +62,13 @@ Response: the created `CategoryRead` object.
 
 ## Products
 
-### `GET /api/products?category_id=1&sort_by=opportunity_score&order=desc`
+### `GET /api/products`
+Query params (all optional): `category_id`, `min_price`, `max_price`,
+`min_rating` (0-5), `material` (comma-separated, matches ANY),
+`sort_by`, `order` (`asc`|`desc`), `skip`, `limit`.
+
+Returns `422` if `min_price > max_price`.
+
 ```json
 [
   {
@@ -73,10 +79,42 @@ Response: the created `CategoryRead` object.
     "rating": 4.3,
     "review_count": 812,
     "features": ["adjustable shelves", "wheeled base", "soft-close doors"],
+    "material": ["Engineered Wood", "Steel"],
+    "asin": "B0ABC12345",
+    "url": "https://www.amazon.com/dp/B0ABC12345",
     "opportunity_score": 78.4,
-    "demand_score": 82.1
+    "demand_score": 82.1,
+    "score_breakdown": {
+      "rating_norm": 86.0,
+      "demand_score": 82.1,
+      "trend_score": 77.3,
+      "weights": { "rating": 0.35, "demand": 0.40, "trend": 0.25 },
+      "demand_formula": "log10(review_count + 1) / log10(5001) * 100, clamped to 5-100",
+      "opportunity_formula": "0.35 * rating_norm + 0.40 * demand_score + 0.25 * trend_score"
+    }
   }
 ]
+```
+`material` may be `[]` when the listing text names no recognizable material.
+`asin`/`url` are `null` for provider-synthesized (mock) products, which have
+no real listing to link to.
+
+`score_breakdown` exists so a ranking can be audited rather than taken on
+trust: substituting its values into `opportunity_formula` reproduces
+`opportunity_score` exactly. The weights and formula strings are emitted by
+the same module that computes the score, so they cannot drift from it.
+
+### `GET /api/products/facets?category_id=1`
+Filter metadata for building the filter UI from the data that actually
+exists (`category_id` optional; omit for all categories).
+```json
+{
+  "price_min": 45.99,
+  "price_max": 1499.99,
+  "rating_min": 3.3,
+  "rating_max": 4.6,
+  "materials": [ { "value": "Corduroy", "count": 3 }, { "value": "Leather", "count": 1 } ]
+}
 ```
 
 ### `GET /api/products/{id}`
@@ -112,10 +150,15 @@ Response:
 
 ### `POST /api/analysis/reviews`
 Aspect-Based Sentiment Analysis over a batch of reviews.
-Request:
+Request (`language` optional, `"en"` | `"zh"`, defaults to `"en"`):
 ```json
-{ "reviews": [{ "review": "Looks beautiful but drawers are too small" }] }
+{
+  "reviews": [{ "review": "Looks beautiful but drawers are too small" }],
+  "language": "zh"
+}
 ```
+`language` controls the language of the returned aspect labels and pain
+points. JSON keys always stay English - only values are localized.
 Response:
 ```json
 {
@@ -133,9 +176,9 @@ Returns `503`/clear error JSON (not a stack trace) if the configured provider's 
 ### `POST /api/opportunities/generate`
 Combines market trend + review analysis (+ similar past reports via RAG) into a new
 product opportunity report.
-Request:
+Request (`language` optional, `"en"` | `"zh"`, defaults to `"en"`):
 ```json
-{ "category_id": 1, "product_id": null }
+{ "category_id": 1, "product_id": null, "language": "zh" }
 ```
 Response:
 ```json
@@ -148,9 +191,23 @@ Response:
   "solution": "A slim vertical cabinet that maximizes storage in tight footprints",
   "features": ["stackable modular bins", "fold-out ironing surface", "wheeled base"],
   "selling_points": ["saves floor space", "tool-free assembly", "matches modern decor"],
+  "language": "en",
+  "source_products": [
+    {
+      "name": "OKZEST Slim Laundry Room Organization Cart ...",
+      "asin": "B0ABC12345",
+      "url": "https://www.amazon.com/dp/B0ABC12345"
+    }
+  ],
   "created_at": "2026-08-19T10:05:00Z"
 }
 ```
+`language` records which language the stored prose is actually in (a past
+report cannot be re-rendered in another language without re-running the
+model). `source_products` is the set of real listings the report was based
+on, snapshotted at generation time; it is empty when generated from mock
+data, and listings without a real URL are omitted rather than shown as
+unverifiable citations.
 
 ### `GET /api/opportunities?category_id=1`
 List past reports for a category (or all, if omitted).

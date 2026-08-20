@@ -65,6 +65,7 @@ def analyze_reviews(
     review_texts: list[str],
     product_id: int | None = None,
     category_id: int | None = None,
+    language: str = "en",
 ) -> ReviewAnalysisResponse:
     """
     Run the LLM-powered aspect-based sentiment analysis over a batch of
@@ -72,8 +73,8 @@ def analyze_reviews(
     and return it as a ReviewAnalysisResponse.
 
     Raises:
-        RuntimeError: propagated from AnthropicClient.complete() if
-            ANTHROPIC_API_KEY is not configured - this is intentional so
+        RuntimeError: propagated from the LLM client if its API key is
+            not configured - this is intentional so
             the API layer can translate it into a clear 4xx/5xx response
             rather than the request silently succeeding with fake data.
         app.ai.agent.AgentParseError: if the LLM's response could not be
@@ -82,7 +83,7 @@ def analyze_reviews(
     llm_client = get_llm_client()
     agent = FurnitureInsightAgent(llm_client=llm_client, rag_module=rag)
 
-    result = agent.analyze_reviews(reviews=review_texts)
+    result = agent.analyze_reviews(reviews=review_texts, language=language)
 
     analysis = ReviewAnalysis(
         product_id=product_id,

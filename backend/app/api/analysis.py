@@ -4,7 +4,7 @@ Ad-hoc review analysis endpoint: POST /api/analysis/reviews.
 Unlike POST /api/reviews (which just persists raw text), this endpoint
 runs the full LLM-powered aspect-based sentiment analysis immediately
 and returns the result (also persisting it as a ReviewAnalysis row for
-audit/reuse). Requires ANTHROPIC_API_KEY to be configured; if it is not,
+audit/reuse). Requires the configured LLM provider's API key; if it is not set,
 this endpoint returns a clear 503 rather than crashing or returning fake
 data.
 """
@@ -26,10 +26,10 @@ def analyze_reviews(payload: ReviewAnalysisRequest, db: Session = Depends(get_db
     review_texts = [item.review for item in payload.reviews]
 
     try:
-        return review_service.analyze_reviews(db, review_texts)
+        return review_service.analyze_reviews(db, review_texts, language=payload.language)
     except RuntimeError as exc:
-        # Raised by AnthropicClient.complete() when ANTHROPIC_API_KEY is
-        # not configured, or when the Anthropic API call itself fails.
+        # Raised by the LLM client when its API key is not configured,
+        # or when the upstream LLM API call itself fails.
         # 503 Service Unavailable is the correct status for "this
         # feature's upstream dependency isn't configured/reachable".
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc

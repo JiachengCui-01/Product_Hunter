@@ -5,8 +5,10 @@ Uses pydantic-settings to load configuration from environment variables
 and an optional `.env` file located in the `backend/` directory. All
 settings have sensible defaults so the application can boot in a fresh
 environment (e.g. CI, a new dev machine) without any configuration at
-all - the only things that unlock AI features are ANTHROPIC_API_KEY /
-RAINFOREST_API_KEY, which are intentionally empty by default.
+all - the only things that unlock AI/live-data features are the LLM
+provider key (DEEPSEEK_API_KEY by default, ANTHROPIC_API_KEY when
+LLM_PROVIDER=anthropic) and RAINFOREST_API_KEY, all intentionally empty
+by default.
 
 Path handling
 -------------

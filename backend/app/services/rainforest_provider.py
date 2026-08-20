@@ -51,6 +51,7 @@ import httpx
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.services.market_data_provider import MarketDataProvider
+from app.services.material_extraction import extract_materials
 
 logger = get_logger(__name__)
 
@@ -279,13 +280,24 @@ class RainforestProvider(MarketDataProvider):
 
         products = []
         for item in results:
+            title = item["title"]
+            asin = item["asin"]
+            features = _extract_features(title) or [category.name]
             products.append(
                 {
-                    "name": item["title"],
+                    "name": title,
                     "price": _extract_price(item),
                     "rating": float(item.get("rating") or 0.0),
                     "review_count": int(item.get("ratings_total") or 0),
-                    "features": _extract_features(item["title"]) or [category.name],
+                    "features": features,
+                    "material": extract_materials(title, " ".join(features)),
+                    "asin": asin,
+                    # Canonical /dp/<ASIN> permalink rather than the `link`
+                    # field from the response: that one is a long, expiring
+                    # sponsored-click tracking URL (/sspa/click?...) which is
+                    # ugly, session-specific, and not durable in a stored
+                    # report. /dp/<ASIN> is stable and clean.
+                    "url": f"https://www.amazon.com/dp/{asin}",
                     "demand_score": _demand_score_from_review_count(item.get("ratings_total") or 0),
                 }
             )

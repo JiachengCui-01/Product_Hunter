@@ -2,6 +2,7 @@
 
 from pydantic import BaseModel, Field
 
+from app.schemas.opportunity_report import Language
 from app.schemas.review import ReviewIn
 
 
@@ -9,6 +10,9 @@ class ReviewAnalysisRequest(BaseModel):
     """Payload for POST /api/analysis/reviews - an arbitrary batch of reviews to analyze."""
 
     reviews: list[ReviewIn] = Field(..., min_length=1)
+    # Language for the aspect labels / pain-point phrasing the LLM
+    # returns. Defaults to English so existing clients are unaffected.
+    language: Language = "en"
 
 
 class ReviewAnalysisResponse(BaseModel):

@@ -369,6 +369,15 @@ def _infer_category_name(product_name: str) -> str | None:
     return None
 
 
+# Canonical material values (a subset of material_extraction.known_materials())
+# sampled for synthetic products, so the material facet filter has something
+# to filter on when running fully offline.
+_MOCK_MATERIALS = [
+    "Solid Wood", "Engineered Wood", "Metal", "Steel", "Fabric", "Velvet",
+    "Faux Leather", "Leather", "Glass", "Rattan", "Plastic", "Marble",
+]
+
+
 class MockDataProvider(MarketDataProvider):
     """
     Deterministic, offline MarketDataProvider used when
@@ -414,6 +423,14 @@ class MockDataProvider(MarketDataProvider):
                     "rating": rating,
                     "review_count": review_count,
                     "features": features,
+                    # Sampled from the canonical vocabulary so the material
+                    # facet filter is exercisable in offline/mock mode too.
+                    "material": rng.sample(_MOCK_MATERIALS, k=rng.randint(1, 2)),
+                    # No ASIN/URL: these products do not exist. Emitting a
+                    # fabricated Amazon link would render as a real,
+                    # clickable, broken link in the UI - absent is honest.
+                    "asin": None,
+                    "url": None,
                     "demand_score": demand_score,
                 }
             )

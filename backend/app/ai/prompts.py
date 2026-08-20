@@ -11,6 +11,44 @@ import json
 
 
 # ---------------------------------------------------------------------------
+# Output language
+# ---------------------------------------------------------------------------
+
+_LANGUAGE_NAMES = {
+    "en": "English",
+    "zh": "Simplified Chinese (简体中文)",
+}
+
+
+def language_instruction(language: str = "en") -> str:
+    """
+    Build the output-language directive appended to every prompt.
+
+    The critical constraint is the key/value split: JSON KEYS are a
+    machine-readable schema that `agent._call_llm_json` parses by exact
+    name, so translating them would break parsing outright. Only the
+    human-readable VALUES get localized. This is stated emphatically
+    because models otherwise tend to helpfully translate the whole object
+    when asked to "respond in Chinese".
+
+    An unknown language code falls back to English rather than raising -
+    the API layer already validates the value against a Literal, so this
+    is just belt-and-braces for direct/internal callers.
+    """
+    name = _LANGUAGE_NAMES.get(language, _LANGUAGE_NAMES["en"])
+    if language == "en":
+        return "OUTPUT LANGUAGE: Write all values in English."
+    return (
+        f"OUTPUT LANGUAGE (IMPORTANT): Write every human-readable VALUE in {name}. "
+        "The JSON KEYS are a fixed machine-readable schema - keep them in English, "
+        "spelled exactly as specified, and do NOT translate them. "
+        "Do not append English translations or romanization alongside the "
+        f"{name} text. Proper nouns such as brand names and product model "
+        "numbers may stay in their original form."
+    )
+
+
+# ---------------------------------------------------------------------------
 # Shared persona
 # ---------------------------------------------------------------------------
 
@@ -45,6 +83,7 @@ def market_analysis_prompt(
     trend_score: float,
     growth: str,
     keywords: list[str],
+    language: str = "en",
 ) -> str:
     """Build the user prompt for a category-level market analysis."""
     keyword_str = ", ".join(keywords) if keywords else "(none provided)"
@@ -60,7 +99,8 @@ def market_analysis_prompt(
         '  "summary": "<2-3 sentence analysis of the trend and its drivers>",\n'
         '  "opportunity_level": "<Low|Medium|High>",\n'
         '  "recommended_focus": "<one concrete area of focus for a new entrant>"\n'
-        "}\n"
+        "}\n\n"
+        + language_instruction(language)
     )
 
 
@@ -81,7 +121,7 @@ REVIEW_ANALYSIS_SYSTEM = (
 )
 
 
-def review_analysis_prompt(reviews: list[str]) -> str:
+def review_analysis_prompt(reviews: list[str], language: str = "en") -> str:
     """
     Build the user prompt for analyzing a batch of raw review strings.
 
@@ -109,7 +149,8 @@ def review_analysis_prompt(reviews: list[str]) -> str:
         "- 'pain_points' must be specific and actionable, suitable for driving "
         "new product design decisions.\n"
         "- Do not invent information not implied by the reviews.\n"
-        "- Respond with ONLY the JSON object, no markdown fences, no prose."
+        "- Respond with ONLY the JSON object, no markdown fences, no prose.\n\n"
+        + language_instruction(language)
     )
 
 
@@ -137,6 +178,7 @@ def opportunity_prompt(
     pain_points: list[str],
     positive_aspects: list[str],
     similar_reports: list[dict] | None = None,
+    language: str = "en",
 ) -> str:
     """
     Build the user prompt for generating a full opportunity report.
@@ -178,5 +220,6 @@ def opportunity_prompt(
         '  "solution": "<2-4 sentence description of how the product solves the pain points>",\n'
         '  "features": ["<concrete feature>", "..."],\n'
         '  "selling_points": ["<concrete marketing selling point>", "..."]\n'
-        "}\n"
+        "}\n\n"
+        + language_instruction(language)
     )

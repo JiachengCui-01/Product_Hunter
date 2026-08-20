@@ -127,6 +127,13 @@ def seed() -> None:
                     rating=pd["rating"],
                     review_count=pd["review_count"],
                     features=pd["features"],
+                    # .get() rather than [] for the newer provider fields:
+                    # a third-party MarketDataProvider implementation
+                    # written against the original interface may not emit
+                    # them, and a missing link is not worth aborting a seed.
+                    material=pd.get("material") or [],
+                    asin=pd.get("asin"),
+                    url=pd.get("url"),
                     opportunity_score=opportunity_score,
                     demand_score=pd["demand_score"],
                 )

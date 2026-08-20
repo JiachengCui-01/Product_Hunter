@@ -22,12 +22,15 @@ def generate_opportunity(payload: OpportunityGenerateRequest, db: Session = Depe
     LLM recommendation) to generate a new OpportunityReport for a
     category (optionally scoped to a specific product).
 
-    Requires ANTHROPIC_API_KEY to be configured; returns a clear 503 if
+    Requires the configured LLM provider's API key to be configured; returns a clear 503 if
     it is not, and a 502 if the LLM's output could not be parsed.
     """
     try:
         report = opportunity_service.generate_opportunity(
-            db, category_id=payload.category_id, product_id=payload.product_id
+            db,
+            category_id=payload.category_id,
+            product_id=payload.product_id,
+            language=payload.language,
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc

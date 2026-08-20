@@ -30,6 +30,17 @@ class OpportunityReport(Base):
     solution = Column(Text, nullable=False)
     features = Column(JSON, nullable=False, default=list)
     selling_points = Column(JSON, nullable=False, default=list)
+    # Language the LLM generated this report's prose in ("en" | "zh").
+    # Persisted because a past report cannot be re-rendered in another
+    # language without re-running the model, so the UI needs to know which
+    # language the stored text is actually in.
+    language = Column(Text, nullable=False, default="en")
+    # The real marketplace listings that informed this report:
+    # [{"name": ..., "url": ..., "asin": ...}]. Snapshotted onto the report
+    # rather than joined from products at read time, so the report remains
+    # an accurate record of what it was based on even after the product
+    # table is re-seeded with fresher listings.
+    source_products = Column(JSON, nullable=False, default=list)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     def __repr__(self) -> str:  # pragma: no cover
