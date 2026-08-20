@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, String, Text, JSON, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, Text, JSON, DateTime, ForeignKey
 
 from app.database.base import Base
 
@@ -20,7 +20,11 @@ class OpportunityReport(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=False, index=True)
-    product_name = Column(String(255), nullable=False)
+    # Text, not String(N) - LLM-generated product names are unbounded in
+    # practice, and a capped length only fails on Postgres (SQLite ignores
+    # VARCHAR limits), i.e. exactly in production. Same rationale as
+    # Product.name - see app/models/product.py.
+    product_name = Column(Text, nullable=False)
     target_customer = Column(Text, nullable=False)
     pain_points = Column(JSON, nullable=False, default=list)
     solution = Column(Text, nullable=False)

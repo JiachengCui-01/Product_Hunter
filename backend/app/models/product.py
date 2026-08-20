@@ -1,6 +1,6 @@
 """Product model: a specific furniture product observed within a category."""
 
-from sqlalchemy import Column, Integer, Float, String, JSON, ForeignKey
+from sqlalchemy import Column, Integer, Float, Text, JSON, ForeignKey
 
 from app.database.base import Base
 
@@ -17,7 +17,11 @@ class Product(Base):
     __tablename__ = "products"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(255), nullable=False, index=True)
+    # Text (not String(N)): real marketplace listing titles regularly exceed
+    # 255 chars (observed up to 320 from live Amazon data). SQLite silently
+    # ignores VARCHAR length limits, so a capped length passes local dev and
+    # then fails only on Postgres with a DataError - keep this unbounded.
+    name = Column(Text, nullable=False, index=True)
     category_id = Column(Integer, ForeignKey("categories.id"), nullable=False, index=True)
     price = Column(Float, nullable=False)
     rating = Column(Float, nullable=False)
