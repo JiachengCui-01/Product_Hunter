@@ -8,8 +8,8 @@ The app factory (`create_app`) wires up:
     - CORS (origins read from settings.CORS_ORIGINS)
     - all resource routers (categories, trends, products, reviews,
       analysis, opportunities, dashboard)
-    - a startup event that creates all database tables if they don't
-      already exist (app.database.init_db.create_all)
+    - a startup event that migrates the database schema to head
+      (app.database.migrate.run_migrations)
     - a simple /health liveness endpoint
 """
 
@@ -19,7 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api import analysis, categories, dashboard, opportunities, products, reviews, trends
 from app.core.config import settings
 from app.core.logging import configure_logging, get_logger
-from app.database import init_db
+from app.database.migrate import run_migrations
 from app.database.session import SessionLocal, engine
 from app.models.category import Category
 from app.seed.seed_data import seed as run_seed
@@ -63,8 +63,8 @@ def create_app() -> FastAPI:
     @app.on_event("startup")
     def on_startup() -> None:
         """
-        Create all database tables if they don't already exist, then
-        auto-seed mock data if the database is completely empty.
+        Migrate the database schema to head, then auto-seed data if the
+        database is completely empty.
 
         The auto-seed step exists for zero-manual-step deploys on managed
         hosts (e.g. Render's free tier has no interactive shell to run
@@ -76,8 +76,8 @@ def create_app() -> FastAPI:
         and swallowed rather than crashing app startup - a database
         that's merely empty (not broken) should still serve requests.
         """
-        logger.info("Starting up - ensuring database tables exist...")
-        init_db.create_all(engine)
+        logger.info("Starting up - applying database migrations...")
+        run_migrations(engine)
         logger.info("Database ready at %s", settings.resolved_database_url)
 
         db = SessionLocal()

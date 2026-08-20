@@ -18,8 +18,12 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application code.
+# Copy application code plus the Alembic migration environment - the app
+# migrates its own schema to head on startup (app/database/migrate.py), so
+# these must be present in the image, not just in the repo.
 COPY app ./app
+COPY alembic ./alembic
+COPY alembic.ini .
 
 EXPOSE 8000
 

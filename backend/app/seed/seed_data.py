@@ -28,7 +28,7 @@ import json
 from pathlib import Path
 
 from app.core.logging import get_logger
-from app.database.init_db import create_all
+from app.database.migrate import run_migrations
 from app.database.session import SessionLocal, engine
 from app.models.category import Category
 from app.models.market_trend import MarketTrend
@@ -58,10 +58,10 @@ def load_category_fixtures() -> list[dict]:
 
 def seed() -> None:
     """Run the full seed pipeline. Safe to re-run (skips existing categories)."""
-    # Ensure tables exist before we try to insert into them - the seed
-    # script can be run standalone (e.g. before ever starting uvicorn),
-    # so it must not depend on app.main's startup event having run.
-    create_all(engine)
+    # Ensure the schema is at head before inserting - the seed script can
+    # be run standalone (e.g. before ever starting uvicorn), so it must not
+    # depend on app.main's startup event having run.
+    run_migrations(engine)
 
     db = SessionLocal()
     provider = get_data_provider()

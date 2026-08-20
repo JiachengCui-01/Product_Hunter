@@ -68,6 +68,26 @@ This starts Postgres + the backend container pointed at it. No code changes are
 needed — every model uses cross-dialect-safe SQLAlchemy types (see
 `docs/ARCHITECTURE.md`).
 
+## 3b. Schema changes (Alembic)
+
+The app applies pending migrations automatically on startup, so a normal
+deploy needs no manual step. After changing a model, generate a migration:
+
+```powershell
+cd backend
+.venv\Scripts\python.exe -m alembic revision --autogenerate -m "what changed"
+.venv\Scripts\python.exe -m alembic upgrade head
+```
+Review the generated file before committing — autogenerate is a good first
+draft, not a finished migration.
+
+Useful commands: `alembic current` (where is this DB), `alembic history`,
+`alembic downgrade -1` (undo one).
+
+An already-deployed database created before Alembic was introduced is
+detected and stamped at the baseline revision automatically on first
+startup, then upgraded — its data is preserved, no drop-and-reseed.
+
 ## 4. Switching to a real market-data source
 
 `RainforestProvider` is fully implemented and verified against the live

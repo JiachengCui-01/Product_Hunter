@@ -4,7 +4,7 @@ SQLAlchemy models package.
 Importing this package (or any name from it) guarantees every model
 module has been imported and therefore registered on
 `app.database.base.Base.metadata` - this is what allows
-`app.database.init_db.create_all()` to create every table with a single
+Alembic's autogenerate to see every table, and lets migrations run with a single
 call, regardless of which module happens to trigger the import.
 """
 

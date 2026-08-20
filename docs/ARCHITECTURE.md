@@ -42,6 +42,43 @@ same model/service code runs unmodified against SQLite locally or PostgreSQL in
 in `backend/.env` (or run `docker compose up`, which does this for you), reinstall/
 restart the backend. No code changes required.
 
+### Schema migrations: Alembic, applied automatically on startup
+Schema changes are versioned migrations under `backend/alembic/versions/`,
+applied by `app/database/migrate.py` from the FastAPI startup event (and by
+the seed script). There is no `create_all()` anymore.
+
+This was retrofitted after `create_all()` caused three avoidable production
+database rebuilds: it only ever CREATEs *missing tables*, so adding a column
+to a model deployed cleanly and then produced a 500 on every query against
+the still-stale table. Migrations make column changes a normal, data-preserving
+deploy.
+
+`run_migrations()` handles the three states a database can be in, detected by
+table presence rather than a manual flag:
+
+| State | Action |
+|---|---|
+| Empty | run all migrations from scratch |
+| Pre-Alembic (tables exist, no `alembic_version`) | `stamp` at the baseline revision, then upgrade forward - **existing data is preserved** |
+| Already under Alembic | upgrade to head (usually a no-op) |
+
+That middle case is why `0001_baseline` describes the *old* schema as a
+separate revision from `0002_product_links`: it gives an already-deployed
+database a revision to be stamped at, so it can move forward with an
+`ALTER TABLE` instead of being dropped.
+
+Migrations are driven through a connection supplied by the caller
+(`config.attributes["connection"]`, Alembic's documented pattern) rather than
+letting `env.py` build its own engine from settings - otherwise
+`run_migrations(engine)` would silently ignore its argument and migrate
+whatever `DATABASE_URL` points at.
+
+One portability note lives in `0002`: SQLite has no
+`ALTER COLUMN ... DROP DEFAULT`, so the temporary server defaults (needed to
+add NOT NULL columns to populated tables) are only dropped on non-SQLite
+dialects. Leaving them on SQLite is harmless since they match the
+application-level defaults exactly.
+
 ### Vector DB: ChromaDB, embedded mode
 `chromadb`'s Python client can run fully in-process against a local persistent
 directory (`CHROMA_PERSIST_DIR`) — no separate server/container needed. This keeps
